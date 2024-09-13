@@ -10,14 +10,14 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        var size = 10;
-        var divisions = 10;
+        var size = 500;
+        var divisions = 500;
         var gridHelper = new THREE.GridHelper( size, divisions );
 
         var scene = new THREE.Scene();
 
         var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 3000);
-        camera.position.z = 100;
+        camera.position.z = 50;
         camera.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
         scene.add(camera);
 
