@@ -17,17 +17,20 @@
         var scene = new THREE.Scene();
 
         var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 3000);
-        camera.position.z = 50;
-        camera.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
+        camera.position.y = 250;
+        camera.position.x = 0;
+        camera.position.z = 1000;
+        camera.lookAt(new THREE.Vector3(0.0, 250, 0));
         scene.add(camera);
 
         var renderer = new THREE.WebGLRenderer({ canvas: myCanvas, antialias: true });
-        renderer.setClearColor(0x000000);
+        renderer.setClearColor(0x242424);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
         var controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0,250,0);
         controls.update();
 
         function animate(){
@@ -36,76 +39,33 @@
         renderer.render(scene,camera);
 }
 
-        function Triangle(v1, v1Col, v2, v2Col, v3, v3Col){
-        this.vertices = [
-            v1[0], v1[1], v1[2],
-            v2[0], v2[1], v2[2],
-            v3[0], v3[1], v3[2],
-
-            v1[0], v1[1], v1[2],
-            v3[0], v3[1], v3[2],
-            v2[0], v2[1], v2[2],
-        ];
-
-        this.colors = [
-            v1Col[0], v1Col[1], v1Col[2],
-            v2Col[0], v2Col[1], v2Col[2],
-            v3Col[0], v3Col[1], v3Col[2],
-
-            v1Col[0], v1Col[1], v1Col[2],
-            v3Col[0], v3Col[1], v3Col[2],
-            v2Col[0], v2Col[1], v2Col[2],
-        ];
+        function Octagon(position, color){
+        this.position = position;
+        this.color = color;
 
         this.render = function(){
-            var geometry = new THREE.BufferGeometry();
-        // Set the "position" attribute accordingly
-        // Note: itemSize = 3 (third argument) because there are 3 values (components) per vertex
-        geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array(this.vertices), 3 ) );
-        geometry.setAttribute( 'color', new THREE.BufferAttribute( new Float32Array(this.colors), 3 ) );
-        // Indicate that the material's vertexColors are based on the color attribute of vertexes
-        var material = new THREE.MeshBasicMaterial( { vertexColors: true } );
-        this.mesh= new THREE.Mesh( geometry, material );
-        scene.add(this.mesh);
-        scene.add( gridHelper );
+        var geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
+        var material = new THREE.LineBasicMaterial({'color': this.color});
+        var line = new THREE.Line(geometry, material);
+        scene.add(line);
         }
     }
-        function Octagon(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col){
-            this.tri = new Triangle(v1, v1Col, v2, v2Col, v3, v3Col);
-            this.tri2 = new Triangle(v1, v1Col, v3, v3Col, v4, v4Col);
-            this.tri3 = new Triangle(v1, v1Col, v4, v4Col, v5, v5Col);
-            this.tri4 = new Triangle(v1, v1Col, v5, v5Col, v6, v6Col);
-            this.tri5 = new Triangle(v1, v1Col, v6, v6Col, v7, v7Col);
-            this.tri6 = new Triangle(v1, v1Col, v7, v7Col, v8, v8Col);
-            this.tri7 = new Triangle(v1, v1Col, v8, v8Col, v9, v9Col);
-            this.tri8 = new Triangle(v1, v1Col, v9, v9Col, v2, v2Col);
-
-            this.render = function(){
-                this.tri.render();
-                this.tri2.render();
-                this.tri3.render();
-                this.tri4.render();
-                this.tri5.render();
-                this.tri6.render();
-                this.tri7.render();
-                this.tri8.render();
-            }
+        var points = [];
+        for(var i = 0; i < 8 ; i++){
+                points.push(-125,0,0), //v2
+                points.push(125,0,0),  //v3
+                points.push(250,125,0),  //v4
+                points.push(250,375,0),  //v5
+                points.push(125,500,0), //v6
+                points.push (-125,500,0),  //v7
+                points.push(-250,375,0),  //v8
+                points.push(-250,125,0) //v9
         }
+        scene.add( gridHelper );
 
-        var octagon = new Octagon(
-            [0,0,4], [0,1,0.75], //v1
-            [-0.5,-1,4], [0,1,0.75], //v2
-            [0.5,-1,4], [0.25,0,0.5], //v3
-            [1,-0.5,4], [0,1,0.75], //v4
-            [1,0.5,4], [0.25,0,0.75], //v5
-            [0.5,1,4], [0,1,0.75], //v6
-            [-0.5,1,4], [0.25,0,0.5], //v7
-            [-1,0.5,4], [0,1,1], //v8
-            [-1,-0.5,4],[.25,0,0.75] //v9
-            
-        )
-
-        octagon.render();
+    var octagon = new Octagon(points, [1,0.5,0]);
+    octagon.render();
 
         animate();
         renderer.render(scene, camera);
