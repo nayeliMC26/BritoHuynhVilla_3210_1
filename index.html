@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <title>CSC3210 Puzzle Pandemonium</title>
 </head>
@@ -40,17 +40,17 @@
 }
 
         function Octagon(position, color){
-        this.position = position;
-        this.color = color;
+            this.position = position;
+            this.color = color;
 
-        this.render = function(){
-        var geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
-        var material = new THREE.LineBasicMaterial({'color': this.color});
-        var line = new THREE.Line(geometry, material);
-        scene.add(line);
+            this.render = function(){
+                var geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
+                var material = new THREE.LineBasicMaterial({'color': this.color});
+                var line = new THREE.Line(geometry, material);
+                scene.add(line);
+            }
         }
-    }
         var points = [];
         for(var i = 0; i < 8 ; i++){
                 points.push(-125,0,0), //v2
@@ -64,8 +64,39 @@
         }
         scene.add( gridHelper );
 
-    var octagon = new Octagon(points, [1,0.5,0]);
-    octagon.render();
+        var octagon = new Octagon(points, [1,0.5,0]);
+        octagon.render();
+
+        /** Create random points within the octagon's range. */
+        function RandomPoint(numPoints, minX, maxX, minY, maxY, minZ, maxZ) {
+            var randPoints = [];
+            for (var i = 0; i < numPoints; i++) {
+                let x = getRandomNumber(minX, maxX);
+                let y = getRandomNumber(minY, maxY);
+                let z = getRandomNumber(minY, maxZ);
+
+                randPoints.push(x, y, z);
+            }
+
+            // Render the points
+            this.render = function() {
+                var geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(randPoints, 3));
+                // The color for the points could be made black after we create the inner polygons.
+                var material = new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, color: 0xab2323 }); // Red color for now
+                var point = new THREE.Points(geometry, material);
+                scene.add(point);
+            }
+        }
+
+        /** Generate a random integer number between min and max. */
+        function getRandomNumber(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Create random points inside the octagon.
+        var pt = new RandomPoint(10, -125, 125, 125, 375, 0, 0);
+        pt.render();
 
         animate();
         renderer.render(scene, camera);
