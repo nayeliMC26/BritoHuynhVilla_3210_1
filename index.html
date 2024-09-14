@@ -1,74 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <title>CSC3210 Puzzle Pandemonium</title>
+    <title>2D Puzzle</title>
 </head>
+
 <body>
     <canvas id="myCanvas" width="1200" height="900"></canvas>
 
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { DragControls } from 'three/addons/controls/DragControls.js';
 
-        var size = 500;
-        var divisions = 500;
-        var gridHelper = new THREE.GridHelper( size, divisions );
-
+        var size = 1000;
+        var divisions = 100;
+        var gridHelper = new THREE.GridHelper(size, divisions);
         var scene = new THREE.Scene();
 
         var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 3000);
         camera.position.y = 250;
         camera.position.x = 0;
-        camera.position.z = 1000;
+        camera.position.z = 1500;
         camera.lookAt(new THREE.Vector3(0.0, 250, 0));
         scene.add(camera);
 
         var renderer = new THREE.WebGLRenderer({ canvas: myCanvas, antialias: true });
-        renderer.setClearColor(0x242424);
+        renderer.setClearColor(0x603e34);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+       // var texture = new THREE.TextureLoader().load("textures/wallpaperflare.com_wallpaper.jpg", function (texture) { scene.background = texture; });
+
 
         var controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0,250,0);
-        controls.update();
+        controls.target.set(0, 250, 0);
+        
+        function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
+            this.vertices = [
+                v1[0], v1[1], v1[2],
+                v2[0], v2[1], v2[2],
+                v3[0], v3[1], v3[2],
 
-        function animate(){
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene,camera);
-}
+                v1[0], v1[1], v1[2],
+                v3[0], v3[1], v3[2],
+                v2[0], v2[1], v2[2],
+            ];
 
-        function Octagon(position, color){
-        this.position = position;
-        this.color = color;
+            this.colors = [
+                v1Col[0], v1Col[1], v1Col[2],
+                v2Col[0], v2Col[1], v2Col[2],
+                v3Col[0], v3Col[1], v3Col[2],
 
-        this.render = function(){
-        var geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
-        var material = new THREE.LineBasicMaterial({'color': this.color});
-        var line = new THREE.Line(geometry, material);
-        scene.add(line);
+                v1Col[0], v1Col[1], v1Col[2],
+                v3Col[0], v3Col[1], v3Col[2],
+                v2Col[0], v2Col[1], v2Col[2],
+            ];
+
+            var geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
+
+            var material = new THREE.MeshBasicMaterial({ vertexColors: true });
+            this.mesh = new THREE.Mesh(geometry, material);
+
+            scene.add(this.mesh);
         }
-    }
-        var points = [];
-        for(var i = 0; i < 8 ; i++){
-                points.push(-125,0,0), //v2
-                points.push(125,0,0),  //v3
-                points.push(250,125,0),  //v4
-                points.push(250,375,0),  //v5
-                points.push(125,500,0), //v6
-                points.push (-125,500,0),  //v7
-                points.push(-250,375,0),  //v8
-                points.push(-250,125,0) //v9
-        }
-        scene.add( gridHelper );
 
-    var octagon = new Octagon(points, [1,0.5,0]);
-    octagon.render();
+        /*function Octagon(position){
+          this.position = position;
+  
+          this.render = function(){
+          var geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
+          var material = new THREE.LineBasicMaterial({'color': 0x05431f});
+          var line = new THREE.Line(geometry, material);
+          scene.add(line);
+  
+          }
+      }
+          var points = [];
+          for(var i = 0; i < 8 ; i++){
+                  points.push(-125,0,0), //v2
+                  points.push(125,0,0),  //v3
+                  points.push(250,125,0),  //v4
+                  points.push(250,375,0),  //v5
+                  points.push(125,500,0), //v6
+                  points.push (-125,500,0),  //v7
+                  points.push(-250,375,0),  //v8
+                  points.push(-250,125,0) //v9
+          }*/
+            //scene.add(gridHelper);
+
+        function Octagon(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col) {
+            this.group = new THREE.Group();
+
+            this.tri = new Triangle(v1, v1Col, v2, v2Col, v3, v3Col);
+            this.tri2 = new Triangle(v1, v1Col, v3, v3Col, v4, v4Col);
+            this.tri3 = new Triangle(v1, v1Col, v4, v4Col, v5, v5Col);
+            this.tri4 = new Triangle(v1, v1Col, v5, v5Col, v6, v6Col);
+            this.tri5 = new Triangle(v1, v1Col, v6, v6Col, v7, v7Col);
+            this.tri6 = new Triangle(v1, v1Col, v7, v7Col, v8, v8Col);
+            this.tri7 = new Triangle(v1, v1Col, v8, v8Col, v9, v9Col);
+            this.tri8 = new Triangle(v1, v1Col, v9, v9Col, v2, v2Col);
+
+            this.group.add(this.tri.mesh);
+            this.group.add(this.tri2.mesh);
+            this.group.add(this.tri3.mesh);
+            this.group.add(this.tri4.mesh);
+            this.group.add(this.tri5.mesh);
+            this.group.add(this.tri6.mesh);
+            this.group.add(this.tri7.mesh);
+            this.group.add(this.tri8.mesh);
+
+            scene.add(this.group);
+
+
+            this.render = function () {
+                this.tri.mesh.geometry.attributes.position.needsUpdate = true;
+                this.tri2.mesh.geometry.attributes.position.needsUpdate = true;
+                this.tri3.mesh.geometry.attributes.position.needsUpdate = true;
+                this.tri4.mesh.geometry.attributes.position.needsUpdate = true;
+                this.tri5.mesh.geometry.attributes.position.needsUpdate = true;
+                this.tri6.mesh.geometry.attributes.position.needsUpdate = true;
+                this.tri7.mesh.geometry.attributes.position.needsUpdate = true;
+                this.tri8.mesh.geometry.attributes.position.needsUpdate = true;
+            };
+        }
+
+        var octagon2 = new Octagon(
+            [0, 265, -10], [0.4, 0.1, .1], //v1
+            [-135, 0, -10], [0.4, 0.1, .1], //v2
+            [135, 0, -10], [0.6, 0.1, .1], //v3
+            [265, 130, -10], [0.4, 0.1, .1], //v4
+            [265, 400, -10], [0.4, 0.1, .1], //v5
+            [135, 530, -10], [0.4, 0.1, .1], //v6
+            [-135, 530, -10], [0.4, 0.1, .1], //v7
+            [-265, 400, -10], [0.4, 0.1, .1], //v8
+            [-265, 130, -10], [0.4, 0.1, .1] //v9
+        )
+
+        
+
+        var octagon = new Octagon(
+            [0, 265, 0], [0.9, 0.2, 0.2], //v1
+            [-125, 15, 0], [0.9, 0.4, 0.2], //v2
+            [125, 15, 0], [0.9, 0.4, 0.2], //v3
+            [250, 140, 0], [0.9, 0.4, 0.2], //v4
+            [250, 390, 0], [0.9, 0.4, 0.2], //v5
+            [125, 515, 0], [0.9, 0.4, 0.2], //v6
+            [-125, 515, 0], [0.9, 0.4, 0.2], //v7
+            [-250, 390, 0], [0.9, 0.4, 0.2], //v8
+            [-250, 140, 0], [0.9, 0.4, 0.2] //v9
+
+        )
+       
+
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        var objects = [octagon.group];
+        var dControls = new DragControls(objects, camera, renderer.domElement);
+
+        dControls.addEventListener('dragstart', function (event) {
+            controls.enabled = false;
+        })
+        dControls.addEventListener('dragend', function (event) {
+            controls.enabled = true;
+        })
+            
+
+
+        //var octagon = new Octagon(points);
+        //octagon.render();
 
         animate();
-        renderer.render(scene, camera);
     </script>
 </body>
+
 </html>
