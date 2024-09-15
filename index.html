@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 
+
 <head>
     <title>2D Puzzle</title>
 </head>
+
 
 <body>
     <canvas id="myCanvas" width="1200" height="900"></canvas>
@@ -13,16 +15,13 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { DragControls } from 'three/addons/controls/DragControls.js';
 
-        var size = 1000;
-        var divisions = 100;
-        var gridHelper = new THREE.GridHelper(size, divisions);
         var scene = new THREE.Scene();
 
-        var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 3000);
+        var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 10000);
         camera.position.y = 250;
-        camera.position.x = 0;
-        camera.position.z = 1500;
-        camera.lookAt(new THREE.Vector3(0.0, 250, 0));
+        camera.position.x = 250;
+        camera.position.z = 2000;
+        camera.lookAt(new THREE.Vector3(250, 250, 0));
         scene.add(camera);
 
         var renderer = new THREE.WebGLRenderer({ canvas: myCanvas, antialias: true });
@@ -30,12 +29,11 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-       // var texture = new THREE.TextureLoader().load("textures/wallpaperflare.com_wallpaper.jpg", function (texture) { scene.background = texture; });
+        // var texture = new THREE.TextureLoader().load("textures/wallpaperflare.com_wallpaper.jpg", function (texture) { scene.background = texture; });
 
+        // var controls = new OrbitControls(camera, renderer.domElement);
+        // controls.target.set(0, 250, 0);
 
-        var controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 250, 0);
-        
         function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
             this.vertices = [
                 v1[0], v1[1], v1[2],
@@ -57,129 +55,184 @@
                 v2Col[0], v2Col[1], v2Col[2],
             ];
 
-            var geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
+            this.origin = new THREE.Vector3(v1[0], v1[1], v1[2]);
 
-            var material = new THREE.MeshBasicMaterial({ vertexColors: true });
-            this.mesh = new THREE.Mesh(geometry, material);
+            this.render = function () {
+                var geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
+                var material = new THREE.MeshBasicMaterial({ vertexColors: true });
+                this.mesh = new THREE.Mesh(geometry, material);
+                scene.add(this.mesh);
+            };
+            this.render();
 
-            scene.add(this.mesh);
+            this.moveTo = function (x, y, z) {
+                this.mesh.translateX(x - this.origin.x);
+                this.mesh.translateY(y - this.origin.y);
+                this.mesh.translateZ(z - this.origin.z);
+                this.origin.x = x;
+                this.origin.y = y;
+                this.origin.z = z;
+
+            }
         }
 
-        /*function Octagon(position){
-          this.position = position;
-  
-          this.render = function(){
-          var geometry = new THREE.BufferGeometry();
-          geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
-          var material = new THREE.LineBasicMaterial({'color': 0x05431f});
-          var line = new THREE.Line(geometry, material);
-          scene.add(line);
-  
-          }
-      }
-          var points = [];
-          for(var i = 0; i < 8 ; i++){
-                  points.push(-125,0,0), //v2
-                  points.push(125,0,0),  //v3
-                  points.push(250,125,0),  //v4
-                  points.push(250,375,0),  //v5
-                  points.push(125,500,0), //v6
-                  points.push (-125,500,0),  //v7
-                  points.push(-250,375,0),  //v8
-                  points.push(-250,125,0) //v9
-          }*/
-            //scene.add(gridHelper);
-
+        // Creates Octagons
         function Octagon(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col) {
+
+            this.triangles = [
+                new Triangle(v1, v1Col, v2, v2Col, v3, v3Col),
+                new Triangle(v1, v1Col, v3, v3Col, v4, v4Col),
+                new Triangle(v1, v1Col, v4, v4Col, v5, v5Col),
+                new Triangle(v1, v1Col, v5, v5Col, v6, v6Col),
+                new Triangle(v1, v1Col, v6, v6Col, v7, v7Col),
+                new Triangle(v1, v1Col, v7, v7Col, v8, v8Col),
+                new Triangle(v1, v1Col, v8, v8Col, v9, v9Col),
+                new Triangle(v1, v1Col, v9, v9Col, v2, v2Col)
+            ];
+
+        }
+
+        // Creates Squares / Rectangles
+        function Square(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col) {
+            this.tri1 = new Triangle(v1, v1Col, v2, v2Col, v3, v3Col);
+            this.tri2 = new Triangle(v1, v1Col, v3, v3Col, v4, v4Col);
+        }
+
+        // creates a set of the same 10 puzzle pieces
+        function puzzlePieces(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col, v10, v10Col, v11, v11Col, v12, v12Col) {
+
+            // Array of puzzle pieces
+            this.triangles = [
+                new Triangle(v1, v1Col, v2, v2Col, v5, v5Col),
+                new Triangle(v1, v1Col, v5, v5Col, v6, v6Col),
+                new Triangle(v2, v2Col, v3, v3Col, v10, v10Col),
+                new Triangle(v10, v10Col, v3, v3Col, v4, v4Col),
+                new Triangle(v10, v10Col, v4, v4Col, v11, v11Col),
+                new Triangle(v11, v11Col, v4, v4Col, v5, v5Col),
+                new Triangle(v7, v7Col, v12, v12Col, v6, v6Col),
+                new Triangle(v9, v9Col, v12, v12Col, v7, v7Col),
+                new Triangle(v9, v9Col, v7, v7Col, v8, v8Col),
+                new Triangle(v8, v8Col, v1, v1Col, v9, v9Col)
+            ];
+
+            // Group needed to move the puzzle pieces
             this.group = new THREE.Group();
 
-            this.tri = new Triangle(v1, v1Col, v2, v2Col, v3, v3Col);
-            this.tri2 = new Triangle(v1, v1Col, v3, v3Col, v4, v4Col);
-            this.tri3 = new Triangle(v1, v1Col, v4, v4Col, v5, v5Col);
-            this.tri4 = new Triangle(v1, v1Col, v5, v5Col, v6, v6Col);
-            this.tri5 = new Triangle(v1, v1Col, v6, v6Col, v7, v7Col);
-            this.tri6 = new Triangle(v1, v1Col, v7, v7Col, v8, v8Col);
-            this.tri7 = new Triangle(v1, v1Col, v8, v8Col, v9, v9Col);
-            this.tri8 = new Triangle(v1, v1Col, v9, v9Col, v2, v2Col);
-
-            this.group.add(this.tri.mesh);
-            this.group.add(this.tri2.mesh);
-            this.group.add(this.tri3.mesh);
-            this.group.add(this.tri4.mesh);
-            this.group.add(this.tri5.mesh);
-            this.group.add(this.tri6.mesh);
-            this.group.add(this.tri7.mesh);
-            this.group.add(this.tri8.mesh);
+            // loop to adds all the triangles into the group
+            for (let i = 0; i < this.triangles.length; i++) {
+                this.group.add(this.triangles[i].mesh);
+            }
 
             scene.add(this.group);
 
+            // Moves the triangles to the puzzle board
+            this.triangles[0].moveTo(400, -200, 0);
+            this.triangles[1].moveTo(700, -200, 0);
+            this.triangles[2].moveTo(800, 600, 0);
+            this.triangles[3].moveTo(400, 500, 0);
+            this.triangles[4].moveTo(425, -100, 0);
+            this.triangles[5].moveTo(750, 300, 0);
+            this.triangles[6].moveTo(810, 590, 0);
+            this.triangles[7].moveTo(935, -210, 0);
+            this.triangles[8].moveTo(660, 500, 0);
+            this.triangles[9].moveTo(425, 260, 0);
 
-            this.render = function () {
-                this.tri.mesh.geometry.attributes.position.needsUpdate = true;
-                this.tri2.mesh.geometry.attributes.position.needsUpdate = true;
-                this.tri3.mesh.geometry.attributes.position.needsUpdate = true;
-                this.tri4.mesh.geometry.attributes.position.needsUpdate = true;
-                this.tri5.mesh.geometry.attributes.position.needsUpdate = true;
-                this.tri6.mesh.geometry.attributes.position.needsUpdate = true;
-                this.tri7.mesh.geometry.attributes.position.needsUpdate = true;
-                this.tri8.mesh.geometry.attributes.position.needsUpdate = true;
-            };
         }
 
-        var octagon2 = new Octagon(
-            [0, 265, -10], [0.4, 0.1, .1], //v1
-            [-135, 0, -10], [0.4, 0.1, .1], //v2
-            [135, 0, -10], [0.6, 0.1, .1], //v3
-            [265, 130, -10], [0.4, 0.1, .1], //v4
-            [265, 400, -10], [0.4, 0.1, .1], //v5
-            [135, 530, -10], [0.4, 0.1, .1], //v6
-            [-135, 530, -10], [0.4, 0.1, .1], //v7
-            [-265, 400, -10], [0.4, 0.1, .1], //v8
-            [-265, 130, -10], [0.4, 0.1, .1] //v9
-        )
+        function randomV(origin, min, max) {
+            let tempX, tempY;
+            if (((Math.random() - .5) * 2) > 0) {
+                tempX = (Math.random() - .5) * 2;
+                if (tempX < 0) {
+                    tempX = origin.x + (tempX * (max - min)) - min; // range [-min,-max]
+                    tempY = origin.y + (((Math.random() - .5) * 2) * max); // range [-max,max]
+                } else {
+                    tempX = origin + (tempX * (max - min)) + min; // range [min,max]
+                    tempY = origin.y + (((Math.random() - .5) * 2) * max); // range [-max,max]
+                }
+            } else {
+                tempY = (Math.random() - .5) * 2;
+                if (tempY < 0) {
+                    tempY = origin.y + (tempX * (max - min)) - min; // range [-min,-max]
+                    tempX = origin.x + (((Math.random() - .5) * 2) * max); // range [-max,max]
+                } else {
+                    tempY = origin.y + (tempX * (max - min)) + min; // range [min,max]
+                    tempX = origin.x + (((Math.random() - .5) * 2) * max); // range [-max,max]
+                }
+            }
 
-        
+            return new THREE.Vector3(tempX, tempY, origin.z)
+        }
 
         var octagon = new Octagon(
-            [0, 265, 0], [0.9, 0.2, 0.2], //v1
-            [-125, 15, 0], [0.9, 0.4, 0.2], //v2
-            [125, 15, 0], [0.9, 0.4, 0.2], //v3
-            [250, 140, 0], [0.9, 0.4, 0.2], //v4
-            [250, 390, 0], [0.9, 0.4, 0.2], //v5
-            [125, 515, 0], [0.9, 0.4, 0.2], //v6
-            [-125, 515, 0], [0.9, 0.4, 0.2], //v7
-            [-250, 390, 0], [0.9, 0.4, 0.2], //v8
-            [-250, 140, 0], [0.9, 0.4, 0.2] //v9
-
+            [0, 250, 0], [0.9, 0.2, 0.2], //v1
+            [-120, 10, 0], [0.9, 0.4, 0.2], //v2
+            [120, 10, 0], [0.9, 0.4, 0.2], //v3
+            [240, 130, 0], [0.9, 0.4, 0.2], //v4
+            [240, 370, 0], [0.9, 0.4, 0.2], //v5
+            [120, 490, 0], [0.9, 0.4, 0.2], //v6
+            [-120, 490, 0], [0.9, 0.4, 0.2], //v7
+            [-240, 370, 0], [0.9, 0.4, 0.2], //v8
+            [-240, 130, 0], [0.9, 0.4, 0.2] //v9
         )
-       
 
+        // Background octagon
+        var octagon2 = new Octagon(
+            [0, 250, -1], [0.4, 0.1, .1], //v1
+            [-125, 0, -1], [0.4, 0.1, .1], //v2
+            [125, 0, -1], [0.6, 0.1, .1], //v3
+            [250, 125, -1], [0.4, 0.1, .1], //v4
+            [250, 375, -1], [0.4, 0.1, .1], //v5
+            [125, 500, -1], [0.4, 0.1, .1], //v6
+            [-125, 500, -1], [0.4, 0.1, .1], //v7
+            [-250, 375, -1], [0.4, 0.1, .1], //v8
+            [-250, 125, -1], [0.4, 0.1, .1] //v9
+        )
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
+        var puzzle = new puzzlePieces(
+            [-117.5, 15, 1], [.28, .92, .14], // v1
+            [117.5, 15, 1], [.28, .92, .14], // v2
+            [235, 132.5, 1], [.28, .92, .14], // v3
+            [235, 367.5, 1], [.28, .92, .14], // v4
+            [117.5, 485, 1], [.28, .92, .14], // v5
+            [-117.5, 485, 1], [.28, .92, .14], // v6
+            [-235, 367.5, 1], [.28, .92, .14], // v7
+            [-235, 132.5, 1], [.28, .92, .14], // v8
+            [-117.5, 132.5, 1], [.28, .92, .14], // v9
+            [117.5, 132.5, 1], [.28, .92, .14], // v10
+            [117.5, 367.5, 1], [.28, .92, .14], // v11
+            [-117.5, 367.5, 1], [.28, .92, .14] // v12
+        );
 
-        var objects = [octagon.group];
+        var puzzleBoard = new Square(
+            [350, -250, -1], [0.1, 0.1, 0.1],
+            [950, -250, -1], [0.1, 0.1, 0.1],
+            [950, 750, -1], [0.1, 0.1, 0.1],
+            [350, 750, -1], [0.1, 0.1, 0.1]
+        );
+
+        var objects = [puzzle.group];
         var dControls = new DragControls(objects, camera, renderer.domElement);
 
         dControls.addEventListener('dragstart', function (event) {
-            controls.enabled = false;
+            // controls.enabled = false;
         })
         dControls.addEventListener('dragend', function (event) {
-            controls.enabled = true;
+            // controls.enabled = true;
         })
-            
 
-
-        //var octagon = new Octagon(points);
-        //octagon.render();
+        function animate() {
+            requestAnimationFrame(animate);
+            // controls.update();
+            renderer.render(scene, camera);
+        }
 
         animate();
+
     </script>
 </body>
+
 
 </html>
