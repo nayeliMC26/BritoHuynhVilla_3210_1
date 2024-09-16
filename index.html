@@ -151,7 +151,7 @@
                     // if the position of triangle 1 is less than the allowable area of intersection 
                     if (triangles[i].mesh.position.distanceTo(triangles[j].mesh.position) < intersect) {
                         // snap to triangle 2
-                        triangles[i].mesh.position.copy(triangles[j].mesh.position)
+                        triangles[i].mesh.position.copy(triangles[j].mesh.position);
                     }
                 }
             }
@@ -169,7 +169,7 @@
             [-135, 530, -10], [0.2, 0.3, .1], //v7
             [-265, 400, -10], [0.2, 0.3, .1], //v8
             [-265, 130, -10], [0.2, 0.3, .1] //v9
-        )
+        );
         var octagon = new Octagon(
             // origin vertex
             [0, 265, 0], [0.9, 0.2, 0.2], //v1
@@ -181,7 +181,21 @@
             [-125, 515, 0], [0.9, 0.1, 0.2], //v7
             [-250, 390, 0], [0.9, 0.1, 0.2], //v8
             [-250, 140, 0], [0.9, 0.1, 0.2] //v9
-        )
+        );
+
+        // Randomize the placement of the pieces
+        for (var i = 0; i < octagon.triangles.length; i++) {
+            octagon.triangles[i].mesh.translateX(getRandomNumber(500, 900));
+            octagon.triangles[i].mesh.translateY(getRandomNumber(-200, 500));
+        }
+
+        /** Generate a random integer number between min and max. */
+        function getRandomNumber(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+
+
         // function to allow the scene to continuously update 
         function animate() {
             requestAnimationFrame(animate);
@@ -198,7 +212,7 @@
             // this momentarily disables the orbit controls to allow for static clicking and dragging 
             controls.enabled = false;
 
-        })
+        });
         // eventListener which detects when an object is no longer being dragged
         dControls.addEventListener('dragend', function (event) {
             // snapTo function which occurs when an object is let go of in the range of intersection
@@ -206,7 +220,9 @@
             // when the object is no longer being dragged, orbitControls can be enabled again
             controls.enabled = true;
 
-        })
+        });
+        
+
 
         // a board to store all the polygons
         var puzzleBoard = new Square(
@@ -218,6 +234,7 @@
 
         //var octagon = new Octagon(points);
         //octagon.render();
+        
 
         animate();
     </script>
