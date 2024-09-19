@@ -90,31 +90,6 @@
             this.tri2 = new Triangle(v1, v1Col, v3, v3Col, v4, v4Col);
         }
 
-        /*function Octagon(position){
-          this.position = position;
-  
-          this.render = function(){
-          var geometry = new THREE.BufferGeometry();
-          geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
-          var material = new THREE.LineBasicMaterial({'color': 0x05431f});
-          var line = new THREE.Line(geometry, material);
-          scene.add(line);
-  
-          }
-      }
-          var points = [];
-          for(var i = 0; i < 8 ; i++){
-                  points.push(-125,0,0), //v2
-                  points.push(125,0,0),  //v3
-                  points.push(250,125,0),  //v4
-                  points.push(250,375,0),  //v5
-                  points.push(125,500,0), //v6
-                  points.push (-125,500,0),  //v7
-                  points.push(-250,375,0),  //v8
-                  points.push(-250,125,0) //v9
-          }*/
-        //scene.add(gridHelper);
-
         // create an octagon object which passes in 9 vertices and 9 colors for each vertex
         function Octagon(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col) {
 
@@ -193,8 +168,34 @@
         function getRandomNumber(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
-        
 
+        /** Create points within the octagon's range. */
+        function VertexPoint(numPoints, minX, maxX, minY, maxY, minZ, maxZ) {
+            // TODO Change this to match the location of each triangle vertices
+            var randPoints = [];
+            for (var i = 0; i < numPoints; i++) {
+                let x = getRandomNumber(minX, maxX);
+                let y = getRandomNumber(minY, maxY);
+                let z = getRandomNumber(minY, maxZ);
+                randPoints.push(x, y, z);
+            }
+
+            // Render the points
+            this.render = function () {
+                var geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(randPoints, 3));
+                // Make the points invisible after ensuring the snap function works
+                var material = new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, color: 0xab2323 }); // Red color for now
+                var point = new THREE.Points(geometry, material);
+                scene.add(point);
+            }
+        }
+
+        // TODO Debug output: list the vertices of the pieces to aid in completing the above
+        console.log(octagon.triangles[0].vertices);
+
+        var pt = new VertexPoint(10, -125, 125, 125, 375, 0, 0);
+        pt.render();
 
         // function to allow the scene to continuously update 
         function animate() {
@@ -221,9 +222,7 @@
             controls.enabled = true;
 
         });
-        
-
-
+    
         // a board to store all the polygons
         var puzzleBoard = new Square(
             [350, -250, -2], [0.1, 0.1, 0.1],
