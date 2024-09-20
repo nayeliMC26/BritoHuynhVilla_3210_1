@@ -170,31 +170,42 @@
         }
 
         /** Create points within the octagon's range. */
-        function VertexPoint(numPoints, minX, maxX, minY, maxY, minZ, maxZ) {
+        function VertexPoint() {
             // TODO Change this to match the location of each triangle vertices
-            var randPoints = [];
-            for (var i = 0; i < numPoints; i++) {
+            var points = [];
+            /* for (var i = 0; i < numPoints; i++) {
                 let x = getRandomNumber(minX, maxX);
                 let y = getRandomNumber(minY, maxY);
                 let z = getRandomNumber(minY, maxZ);
-                randPoints.push(x, y, z);
+                points.push(x, y, z);
             }
+            */
+
+            points.push(0, 265, 0); //v1
+            points.push(-125, 15, 0); //v2
+            points.push(125, 15, 0); //v3
+            points.push(250, 140, 0); //v4
+            points.push(250, 390, 0); //v5
+            points.push(125, 515, 0); //v6
+            points.push(-125, 515, 0); //v7
+            points.push(-250, 390, 0); //v8
+            points.push(-250, 140, 0); //v9
 
             // Render the points
             this.render = function () {
                 var geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(randPoints, 3));
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
                 // Make the points invisible after ensuring the snap function works
-                var material = new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, color: 0xab2323 }); // Red color for now
+                var material = new THREE.PointsMaterial({ size: 10, sizeAttenuation: false, color: 0xab2323 }); // Red color for now
                 var point = new THREE.Points(geometry, material);
                 scene.add(point);
             }
         }
-
+        
         // TODO Debug output: list the vertices of the pieces to aid in completing the above
         console.log(octagon.triangles[0].vertices);
 
-        var pt = new VertexPoint(10, -125, 125, 125, 375, 0, 0);
+        var pt = new VertexPoint();
         pt.render();
 
         // function to allow the scene to continuously update 
