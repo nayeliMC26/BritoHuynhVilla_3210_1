@@ -106,16 +106,25 @@
                 new Triangle(v1, v1Col, v7, v7Col, v8, v8Col),
                 new Triangle(v1, v1Col, v8, v8Col, v9, v9Col),
                 new Triangle(v1, v1Col, v9, v9Col, v2, v2Col)
-            ]
+            ];
+
+            // Create squares inside
+            /* this.squares = [
+                new Square(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col)
+            ]; */
             // for each loop to add all meshes to the group and display bounding boxes for them
             this.triangles.forEach(tri => {
                 this.group.add(tri.mesh);
                 /* this.box = new THREE.BoxHelper(tri.mesh, 0x000000);
                  scene.add(this.box);*/
             });
+             /* this.squares.forEach(sq => {
+                this.group.add(sq.mesh);
+                }); 
+            */
             // add the group of triangles to the scene
             scene.add(this.group);
-
+ 
         }
         // function to handle snapping function 
         function snapTo(triangles, intersect = 30) {
@@ -159,10 +168,10 @@
         );
 
         // Randomize the placement of the pieces
-        for (var i = 0; i < octagon.triangles.length; i++) {
+        /* for (var i = 0; i < octagon.triangles.length; i++) {
             octagon.triangles[i].mesh.translateX(getRandomNumber(500, 900));
-            octagon.triangles[i].mesh.translateY(getRandomNumber(-200, 500));
-        }
+            octagon.triangles[i].mesh.translateY(getRandomNumber(-300, 400));
+        } */
 
         /** Generate a random integer number between min and max. */
         function getRandomNumber(min, max) {
@@ -171,15 +180,7 @@
 
         /** Create points within the octagon's range. */
         function VertexPoint() {
-            // TODO Change this to match the location of each triangle vertices
             var points = [];
-            /* for (var i = 0; i < numPoints; i++) {
-                let x = getRandomNumber(minX, maxX);
-                let y = getRandomNumber(minY, maxY);
-                let z = getRandomNumber(minY, maxZ);
-                points.push(x, y, z);
-            }
-            */
 
             points.push(0, 265, 0); //v1
             points.push(-125, 15, 0); //v2
@@ -187,6 +188,13 @@
             points.push(250, 140, 0); //v4
             points.push(250, 390, 0); //v5
             points.push(125, 515, 0); //v6
+
+            points.push(60, 515, 0); //v6Out
+            points.push(60, 387, 0); //v6In
+            points.push(-60, 515, 0); //v7Out
+            points.push(-60, 387, 0); //v7In
+
+            
             points.push(-125, 515, 0); //v7
             points.push(-250, 390, 0); //v8
             points.push(-250, 140, 0); //v9
@@ -201,9 +209,6 @@
                 scene.add(point);
             }
         }
-        
-        // TODO Debug output: list the vertices of the pieces to aid in completing the above
-        console.log(octagon.triangles[0].vertices);
 
         var pt = new VertexPoint();
         pt.render();
