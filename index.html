@@ -13,12 +13,9 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { DragControls } from 'three/addons/controls/DragControls.js';
 
-        // sizes and divisions for the grid 
-        var size = 1000;
-        var divisions = 100;
-        var gridHelper = new THREE.GridHelper(size, divisions);
         // create new scene 
         var scene = new THREE.Scene();
+
         // set up the camera 
         var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 3000);
         camera.position.y = 250;
@@ -26,24 +23,33 @@
         camera.position.z = 1500;
         camera.lookAt(new THREE.Vector3(0.0, 250, 0));
         scene.add(camera);
+
         // create renderer 
         var renderer = new THREE.WebGLRenderer({ canvas: myCanvas, antialias: true });
         // set the background color of the canvas
-        renderer.setClearColor(0xaed17e);
+        renderer.setClearColor(0xecf987);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        // var texture = new THREE.TextureLoader().load("textures/wallpaperflare.com_wallpaper.jpg", function (texture) { scene.background = texture; });
 
         // create a new orbitControls obj and set it to the center of the octagon
         var controls = new OrbitControls(camera, renderer.domElement);
         controls.target.set(0, 250, 0);
+
         // add eventListener to automatically resize the screen with the window 
         window.addEventListener('resize', function () {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         })
+
+        var axesHelper = new THREE.AxesHelper(1000);
+        scene.add(axesHelper)
+
+        var listener = new THREE.AudioListener();
+        camera.add(listener);
+
+      
         // a function to create a triangle object 
         function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
             this.vertices = [
@@ -89,7 +95,8 @@
             this.tri1 = new Triangle(v1, v1Col, v2, v2Col, v3, v3Col);
             this.tri2 = new Triangle(v1, v1Col, v3, v3Col, v4, v4Col);
         }
-
+          
+          
         // create an octagon object which passes in 9 vertices and 9 colors for each vertex
         function Octagon(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col) {
 
@@ -106,68 +113,84 @@
                 new Triangle(v1, v1Col, v7, v7Col, v8, v8Col),
                 new Triangle(v1, v1Col, v8, v8Col, v9, v9Col),
                 new Triangle(v1, v1Col, v9, v9Col, v2, v2Col)
-            ];
-
-            // Create squares inside
-            /* this.squares = [
-                new Square(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col)
-            ]; */
+            ]
             // for each loop to add all meshes to the group and display bounding boxes for them
             this.triangles.forEach(tri => {
                 this.group.add(tri.mesh);
-                /* this.box = new THREE.BoxHelper(tri.mesh, 0x000000);
-                 scene.add(this.box);*/
             });
-             /* this.squares.forEach(sq => {
-                this.group.add(sq.mesh);
-                }); 
-            */
             // add the group of triangles to the scene
             scene.add(this.group);
- 
         }
-        // function to handle snapping function 
-        function snapTo(triangles, intersect = 30) {
-            // for every triangle in the octagon/array of triangles 
+
+
+
+        function rotateOctagon(octagon, angle) {
+            octagon2.group.rotation.z += angle;
+        }
+
+        // function to handle snapping  
+        function snapTo(triangles, targetVector, threshold) {
+            // for every triangle in the array of triangles 
             for (var i = 0; i < triangles.length; i++) {
-                // compare the current triangle to the triangles next to it 
-                for (var j = (i + 1); j < triangles.length; j++) {
-                    // if the position of triangle 1 is less than the allowable area of intersection 
-                    if (triangles[i].mesh.position.distanceTo(triangles[j].mesh.position) < intersect) {
-                        // snap to triangle 2
-                        triangles[i].mesh.position.copy(triangles[j].mesh.position);
-                    }
+                // if the position of the current triangle's distance is less than or equal to the threshold
+                if (triangles[i].mesh.position.distanceTo(targetVector) <= threshold) {
+                    triangles[i].mesh.position.copy(targetVector)
                 }
             }
         }
 
+        function watermelonSeeds(triangles) {
+            // use the vertices of the triangle + scalar create fractal like pattern
+            var points = [];
+            points.push(-450, 435, 5);
+            points.push(-350, 435, 5);
+            points.push(-400, 375, 5);
+            points.push(-400, 500, 5);
+            points.push(-400, 430, 5);
+            points.push(-475, 500, 5);
+            points.push(-325, 500, 5);
+            var geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+            var material = new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, color: 0x000000 }); // Red color for now
+            var point = new THREE.Points(geometry, material);
+            scene.add(point);
+        }
+
+
+
 
         var octagon2 = new Octagon(
-            // origin vertex
-            [0, 265, -10], [0.2, 0.4, .2], //v1
-            [-135, 0, -10], [0.2, 0.3, .1], //v2
-            [135, 0, -10], [0.2, 0.3, .1], //v3
-            [265, 130, -10], [0.2, 0.3, .1], //v4
-            [265, 400, -10], [0.2, 0.3, .1], //v5
-            [135, 530, -10], [0.2, 0.3, .1], //v6
-            [-135, 530, -10], [0.2, 0.3, .1], //v7
-            [-265, 400, -10], [0.2, 0.3, .1], //v8
-            [-265, 130, -10], [0.2, 0.3, .1] //v9
-        );
-        var octagon = new Octagon(
-            // origin vertex
-            [0, 265, 0], [0.9, 0.2, 0.2], //v1
-            [-125, 15, 0], [0.9, 0.1, 0.2], //v2
-            [125, 15, 0], [0.9, 0.1, 0.2], //v3
-            [250, 140, 0], [0.9, 0.1, 0.2], //v4
-            [250, 390, 0], [0.9, 0.1, 0.2], //v5
-            [125, 515, 0], [0.9, 0.1, 0.2], //v6
-            [-125, 515, 0], [0.9, 0.1, 0.2], //v7
-            [-250, 390, 0], [0.9, 0.1, 0.2], //v8
-            [-250, 140, 0], [0.9, 0.1, 0.2] //v9
-        );
 
-        // Randomize the placement of the pieces
+            // origin vertex
+            [0 - 400, 130 + 200, -10], [0.1, 0.2, 0.1], //v1
+            [100 - 400, 380 + 200, -10], [0.2, 0.3, 0.1], // v2
+            [250 - 400, 230 + 200, -10], [0.2, 0.3, 0.1], // v3
+            [250 - 400, 30 + 200, -10], [0.2, 0.3, 0.1], // v4
+            [100 - 400, -120 + 200, -10], [0.2, 0.3, 0.1], // v5
+            [-100 - 400, -120 + 200, -10], [0.2, 0.3, 0.1], //v6
+            [-250 - 400, 30 + 200, -10], [0.2, 0.3, 0.1], // v7
+            [-250 - 400, 230 + 200, -10], [0.2, 0.3, 0.1], // v8
+            [-100 - 400, 380 + 200, -10], [0.2, 0.3, 0.1], // v9
+        )
+
+        var octagon = new Octagon(
+
+            // origin vertex
+            [0 - 400, 325, 0], [0.9, 0.1, 0.1],
+            [224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
+            [93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
+            [-93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
+            [-224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
+            [-224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
+            [-93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
+            [93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
+            [224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
+        )
+
+        var seeds = new watermelonSeeds(octagon.triangles);
+          
+      
+          // Stub: Randomize the placement of the pieces
         /* for (var i = 0; i < octagon.triangles.length; i++) {
             octagon.triangles[i].mesh.translateX(getRandomNumber(500, 900));
             octagon.triangles[i].mesh.translateY(getRandomNumber(-300, 400));
@@ -210,8 +233,39 @@
             }
         }
 
-        var pt = new VertexPoint();
-        pt.render();
+        // Display the points
+        // var pt = new VertexPoint();
+        // pt.render();
+
+        // create an array of objects
+        var objects = [octagon.group];
+
+        // pass in the array to the dragControls object
+        var dControls = new DragControls(objects, camera, renderer.domElement);
+
+        // eventListener which detects when an object has been 'clicked' and is being 'dragged'
+        dControls.addEventListener('dragstart', function (event) {
+            var sound = new THREE.Audio(listener);
+            var audioLoader = new THREE.AudioLoader();
+            audioLoader.load('http://localhost:5173/assets/sounds/mouse click final.mp3', function (buffer) {
+                sound.setBuffer(buffer);
+                sound.setLoop(false);
+                sound.setVolume(0.5);
+                sound.play();
+            })
+
+            // this momentarily disables the orbit controls to allow for static clicking and dragging 
+            controls.enabled = false;
+
+        })
+        // eventListener which detects when an object is no longer being dragged
+        dControls.addEventListener('dragend', function (event) {
+            // snapTo function which occurs when an object is let go of in the range of intersection
+            var targetVector = new THREE.Vector3(0, 0, 0);
+            snapTo(octagon.triangles, targetVector, 40) == true
+            // when the object is no longer being dragged, orbitControls can be enabled again
+            controls.enabled = true;
+        })
 
         // function to allow the scene to continuously update 
         function animate() {
@@ -219,37 +273,6 @@
             controls.update();
             renderer.render(scene, camera);
         }
-
-        // create an array of objects
-        var objects = [octagon.group];
-        // pass in the array to the dragControls object
-        var dControls = new DragControls(objects, camera, renderer.domElement);
-        // eventListener which detects when an object has been 'clicked' and is being 'dragged'
-        dControls.addEventListener('dragstart', function (event) {
-            // this momentarily disables the orbit controls to allow for static clicking and dragging 
-            controls.enabled = false;
-
-        });
-        // eventListener which detects when an object is no longer being dragged
-        dControls.addEventListener('dragend', function (event) {
-            // snapTo function which occurs when an object is let go of in the range of intersection
-            snapTo(octagon.triangles)
-            // when the object is no longer being dragged, orbitControls can be enabled again
-            controls.enabled = true;
-
-        });
-    
-        // a board to store all the polygons
-        var puzzleBoard = new Square(
-            [350, -250, -2], [0.1, 0.1, 0.1],
-            [950, -250, -2], [0.1, 0.1, 0.1],
-            [950, 750, -2], [0.1, 0.1, 0.1],
-            [350, 750, -2], [0.1, 0.1, 0.1]
-        );
-
-        //var octagon = new Octagon(points);
-        //octagon.render();
-        
 
         animate();
     </script>
