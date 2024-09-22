@@ -97,7 +97,7 @@
 
             // Height of the Puzzle Board
             this.height = v3[1] - v1[1];
-          
+
             // Width of the cells
             this.horGap = Math.floor(Math.abs(this.width / this.horCells));
 
@@ -185,8 +185,8 @@
             this.tri1 = new Triangle(v1, v1Col, v2, v2Col, v3, v3Col);
             this.tri2 = new Triangle(v1, v1Col, v3, v3Col, v4, v4Col);
         }
-          
-          
+
+
         // create an octagon object which passes in 9 vertices and 9 colors for each vertex
         function Octagon(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col) {
 
@@ -268,9 +268,9 @@
         )
 
         var seeds = new watermelonSeeds(octagon.triangles);
-          
-      
-          // Stub: Randomize the placement of the pieces
+
+
+        // Stub: Randomize the placement of the pieces
         /* for (var i = 0; i < octagon.triangles.length; i++) {
             octagon.triangles[i].mesh.translateX(getRandomNumber(500, 900));
             octagon.triangles[i].mesh.translateY(getRandomNumber(-300, 400));
@@ -297,7 +297,7 @@
             points.push(-60, 515, 0); //v7Out
             points.push(-60, 387, 0); //v7In
 
-            
+
             points.push(-125, 515, 0); //v7
             points.push(-250, 390, 0); //v8
             points.push(-250, 140, 0); //v9
@@ -335,14 +335,14 @@
             })
 
         })
-      
+
         // eventListener which detects when an object is no longer being dragged
         dControls.addEventListener('dragend', function (event) {
             // snapTo function which occurs when an object is let go of in the range of intersection
             var targetVector = new THREE.Vector3(0, 0, 0);
             snapTo(octagon.triangles, targetVector, 40)
         })
-      
+
         // Adjusting camera aspect to account for window rezise
         window.addEventListener('resize', function (event) {
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -362,3 +362,5 @@
 
 </body>
 
+
+</html>
