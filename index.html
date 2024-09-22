@@ -33,7 +33,7 @@
 
         // Creates a Triangle
         function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
-            this.vertices = [...v1, ...v2, ...v3, ...v1, ...v3,...v2];
+            this.vertices = [...v1, ...v2, ...v3, ...v1, ...v3, ...v2];
 
             this.colors = [...v1Col, ...v2Col, ...v3Col, ...v1Col, ...v3Col, ...v2Col];
 
@@ -188,22 +188,25 @@
 
 
         // create an octagon object which passes in 9 vertices and 9 colors for each vertex
-        function Octagon(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col) {
+        function Octagon(vertices, colors) {
+
+            this.vertices = vertices;
+            this.colors = colors;
 
             // create a group object to enable moving all of the triangles within the octagon
             this.group = new THREE.Group();
 
             // create 8 triangles to form an octagon
             this.triangles = [
-                new Triangle(v1, v1Col, v2, v2Col, v3, v3Col),
-                new Triangle(v1, v1Col, v3, v3Col, v4, v4Col),
-                new Triangle(v1, v1Col, v4, v4Col, v5, v5Col),
-                new Triangle(v1, v1Col, v5, v5Col, v6, v6Col),
-                new Triangle(v1, v1Col, v6, v6Col, v7, v7Col),
-                new Triangle(v1, v1Col, v7, v7Col, v8, v8Col),
-                new Triangle(v1, v1Col, v8, v8Col, v9, v9Col),
-                new Triangle(v1, v1Col, v9, v9Col, v2, v2Col)
-            ]
+                new Triangle(this.vertices[0], this.colors, this.vertices[1], this.colors, this.vertices[2], this.colors),
+                new Triangle(this.vertices[0], this.colors, this.vertices[2], this.colors, this.vertices[3], this.colors),
+                new Triangle(this.vertices[0], this.colors, this.vertices[3], this.colors, this.vertices[4], this.colors),
+                new Triangle(this.vertices[0], this.colors, this.vertices[4], this.colors, this.vertices[5], this.colors),
+                new Triangle(this.vertices[0], this.colors, this.vertices[5], this.colors, this.vertices[6], this.colors),
+                new Triangle(this.vertices[0], this.colors, this.vertices[6], this.colors, this.vertices[7], this.colors),
+                new Triangle(this.vertices[0], this.colors, this.vertices[7], this.colors, this.vertices[8], this.colors),
+                new Triangle(this.vertices[0], this.colors, this.vertices[8], this.colors, this.vertices[1], this.colors)
+            ];
             // for each loop to add all meshes to the group and display bounding boxes for them
             this.triangles.forEach(tri => {
                 this.group.add(tri.mesh);
@@ -239,43 +242,52 @@
             scene.add(point);
         }
 
-        var octagon2 = new Octagon(
+        // List of vertices to be defined for the main octagon board
+        const mainBoardVertices = [
+            [0 - 400, 130 + 200, 0],    // v1, origin vertex
+            [100 - 400, 380 + 200, 0],  // v2
+            [250 - 400, 230 + 200, 0],  // v3
+            [250 - 400, 30 + 200, 0],   // v4
+            [100 - 400, -120 + 200, 0], // v5
+            [-100 - 400, -120 + 200, 0],// v6
+            [-250 - 400, 30 + 200, 0],  // v7
+            [-250 - 400, 230 + 200, 0], // v8
+            [-100 - 400, 380 + 200, 0], // v9
+        ];
+        const mainBoardColors = [0.2, 0.3, 0.1];
 
-            // origin vertex
-            [0 - 400, 130 + 200, 0], [0.1, 0.2, 0.1], //v1
-            [100 - 400, 380 + 200, 0], [0.2, 0.3, 0.1], // v2
-            [250 - 400, 230 + 200, 0], [0.2, 0.3, 0.1], // v3
-            [250 - 400, 30 + 200, 0], [0.2, 0.3, 0.1], // v4
-            [100 - 400, -120 + 200, 0], [0.2, 0.3, 0.1], // v5
-            [-100 - 400, -120 + 200, 0], [0.2, 0.3, 0.1], //v6
-            [-250 - 400, 30 + 200, 0], [0.2, 0.3, 0.1], // v7
-            [-250 - 400, 230 + 200, 0], [0.2, 0.3, 0.1], // v8
-            [-100 - 400, 380 + 200, 0], [0.2, 0.3, 0.1], // v9
-        )
+        const octagon2 = new Octagon(mainBoardVertices, mainBoardColors);
+        
 
-        var octagon = new Octagon(
+        // List of vertices for the pieces
+        var pieceVertices = [
+            [0 - 400, 325, 0], // origin vertex
+            [224.51 - 400, 418.99 + 5, 0],
+            [93.0 - 400, 549.51 + 5, 0],
+            [-93.0 - 400, 549.51 + 5, 0],
+            [-224.51 - 400, 418.99 + 5, 0],
+            [-224.51 - 400, 231.01 + 5, 0],
+            [-93 - 400, 100.49 + 5, 0],
+            [93 - 400, 100.49 + 5, 0],
+            [224.51 - 400, 231.01 + 5, 0]
+        ];
 
-            // origin vertex
-            [0 - 400, 325, 0], [0.9, 0.1, 0.1],
-            [224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
-            [93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
-            [-93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
-            [-224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
-            [-224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
-            [-93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
-            [93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
-            [224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
-        )
+        // All of the pieces will be the same color
+        const pieceColors = [0.9, 0.2, 0.2];
+
+        var octagon = new Octagon(pieceVertices, pieceColors);
 
         var seeds = new watermelonSeeds(octagon.triangles);
 
 
+        // TODO Commented out for now
         // Stub: Randomize the placement of the pieces
         /* for (var i = 0; i < octagon.triangles.length; i++) {
             octagon.triangles[i].mesh.translateX(getRandomNumber(500, 900));
             octagon.triangles[i].mesh.translateY(getRandomNumber(-300, 400));
         } */
 
+        // Helper function for the above.
         /** Generate a random integer number between min and max. */
         function getRandomNumber(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
