@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 
+
 <head>
     <title>2D Puzzle</title>
 </head>
+
 
 <body>
     <canvas id="myCanvas" width="1200" height="900"></canvas>
 
     <script type="module">
         import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { DragControls } from 'three/addons/controls/DragControls.js';
+
 
         // create new scene 
         var scene = new THREE.Scene();
@@ -32,16 +34,24 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // Creates a Triangle
+        function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
+            this.vertices = [...v1, ...v2, ...v3];
+
+            this.colors = [...v1Col, ...v2Col, ...v3Col];
+
+            this.geometry = new THREE.BufferGeometry();
+            this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
+            this.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
+            var material = new THREE.MeshBasicMaterial({ vertexColors: true });
+            this.mesh = new THREE.Mesh(this.geometry, material);
+            scene.add(this.mesh);
+
+        }
+
         // create a new orbitControls obj and set it to the center of the octagon
         var controls = new OrbitControls(camera, renderer.domElement);
         controls.target.set(0, 250, 0);
-
-        // add eventListener to automatically resize the screen with the window 
-        window.addEventListener('resize', function () {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        })
 
         var axesHelper = new THREE.AxesHelper(1000);
         scene.add(axesHelper)
@@ -49,46 +59,137 @@
         var listener = new THREE.AudioListener();
         camera.add(listener);
 
-      
-        // a function to create a triangle object 
-        function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
-            this.vertices = [
-                // create the front plane of the triangle using three vertices
-                // note: turn into THREE.Vectors
-                v1[0], v1[1], v1[2],
-                v2[0], v2[1], v2[2],
-                v3[0], v3[1], v3[2],
 
-                // create the back plane of the triangle using three vertices
-                v1[0], v1[1], v1[2],
-                v3[0], v3[1], v3[2],
-                v2[0], v2[1], v2[2],
-            ];
+        // Creates a Puzzle Piece
+        function puzzlePiece(v1, v2, v3, og, col) {
+            this.vertices = [...v1, ...v2, ...v3];
+            this.color = col;
 
-            this.colors = [
-                // array of colors for every vertex for the front of the plane
-                v1Col[0], v1Col[1], v1Col[2],
-                v2Col[0], v2Col[1], v2Col[2],
-                v3Col[0], v3Col[1], v3Col[2],
-
-                // array of colors for every vertex of the black of the plane
-                v1Col[0], v1Col[1], v1Col[2],
-                v3Col[0], v3Col[1], v3Col[2],
-                v2Col[0], v2Col[1], v2Col[2],
-            ];
+            // Vertex that will act as the origin of the puzzle piece (bottom must vertex)
+            this.origin = [v1[0], v1[1], v1[2]];
 
             // use bufferGeometry to pass in the vertices and colors and create the triangles
             var geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
+            var material = new THREE.MeshBasicMaterial({ color: this.color });
+            this.mesh = new THREE.Mesh(geometry, material);
+            scene.add(this.mesh);
 
-            // use basic material mesh to create the triangles, toggle vertexColors
+            // Funtion to move puzzle piece
+            this.move = function (newVertex) {
+                // Moves it along the X axis
+                this.mesh.translateX(newVertex[0] - this.origin[0]);
+
+                // Moves it along the Y axis
+                this.mesh.translateY(newVertex[1] - this.origin[1]);
+
+                // Updates the origin vertex
+                this.origin = newVertex;
+            }
+
+            // Adds puzzle piece into arra of objects that can be moved
+            moveableObjects.push(this.mesh);
+        }
+
+        // Creates a Puzzle Board
+        function puzzleBoard(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, horizontal, vertical) {
+            this.vertices = [...v1, ...v2, ...v3, ...v1, ...v3, ...v4];
+            this.colors = [...v1Col, ...v2Col, ...v3Col, ...v1Col, ...v3Col, ...v4Col];
+
+            // Amount of cells horizontally
+            this.horCells = horizontal;
+
+            // Amount of cells vertically
+            this.verCells = vertical;
+
+            // Width of the Puzzle Board
+            this.width = v3[0] - v1[0];
+
+            // Height of the Puzzle Board
+            this.height = v3[1] - v1[1];
+          
+            // Width of the cells
+            this.horGap = Math.floor(Math.abs(this.width / this.horCells));
+
+            // Height of the cells
+            this.verGap = Math.floor(Math.abs(this.height / this.verCells));
+
+
+            // Array of ancher points in the cells
+            this.points = [];
+
+            // Array to check if ancher point has been occupied
+            this.occupied = [];
+
+            // Vertex to act as the template for the ancher points
+            this.template = [v1[0] + (this.horGap / 2), v1[1] + (this.horGap / 2)];
+
+            // Loop will iterate vertically (act as the Y)
+            for (var y = 0; y < this.verCells; y++) {
+
+                // Loop will iterate horizonatlly (act as the X)
+                for (var x = 0; x < this.horCells; x++) {
+
+                    // Adds an ancher point and adds false
+                    this.points.push([this.template[0] + (x * this.horGap), this.template[1] + (y * this.verGap), 0])
+                    this.occupied.push(false);
+                }
+            }
+
+            var geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
             var material = new THREE.MeshBasicMaterial({ vertexColors: true });
             this.mesh = new THREE.Mesh(geometry, material);
-
-            // add the triangle to the scene 
             scene.add(this.mesh);
         }
+
+
+        // Moves the puzzle pieces from where they're created to the puzzle board
+        function relocate(pieces, board) {
+
+            // Index to randomly select a point
+            var current = Math.floor(Math.random() * (board.points.length - 1));
+            for (var i = 0; i < pieces.length; i++) {
+                // If the current points is occupied get a new index
+                while (board.occupied[current]) {
+                    current = Math.floor(Math.random() * (board.points.length - 1));
+                }
+
+                // Moves the piece and sets point to occupied
+                pieces[i].move(board.points[current])
+                board.occupied[current] = true;
+
+            }
+
+        }
+
+        // Array of moveable objects (mesh)
+        var moveableObjects = [];
+
+        var piecesBoard = new puzzleBoard(
+            [650, -675, -1], [1, 1, 0],
+            [1900, -675, -1], [1, 0, 1],
+            [1900, 1325, -1], [0, 1, 1],
+            [650, 1325, -1], [1, 1, 1],
+            3, 4
+        );
+
+        var puzzlePieces = [
+            new puzzlePiece([-117.5, -235, 0], [117.5, -235, 0], [117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([-117.5, -235, 0], [117.5, 235, 0], [-117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([117.5, -235, 0], [235, -117.5, 0], [117.5, -117.5, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([117.5, -117.5, 0], [235, -117.5, 0], [235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([117.5, -117.5, 0], [235, 117.5, 0], [117.5, 117.5, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([117.5, 117.5, 0], [235, 117.5, 0], [117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([-235, 117.5, 0], [-117.5, 117.5, 0], [-117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([-235, -117.5, 0], [-117.5, -117.5, 0], [-235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([-117.5, -117.5, 0], [-117.5, 117.5, 0], [-235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
+            new puzzlePiece([-117.5, -235, 0], [-117.5, -117.5, 0], [-235, -117.5, 0], [1, 0, 0], [1, 1, 1])
+        ];
+
+
+        relocate(puzzlePieces, piecesBoard);
 
         // Function to create a square
         function Square(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col) {
@@ -122,12 +223,6 @@
             scene.add(this.group);
         }
 
-
-
-        function rotateOctagon(octagon, angle) {
-            octagon2.group.rotation.z += angle;
-        }
-
         // function to handle snapping  
         function snapTo(triangles, targetVector, threshold) {
             // for every triangle in the array of triangles 
@@ -155,9 +250,6 @@
             var point = new THREE.Points(geometry, material);
             scene.add(point);
         }
-
-
-
 
         var octagon2 = new Octagon(
 
@@ -258,6 +350,7 @@
             controls.enabled = false;
 
         })
+      
         // eventListener which detects when an object is no longer being dragged
         dControls.addEventListener('dragend', function (event) {
             // snapTo function which occurs when an object is let go of in the range of intersection
@@ -266,6 +359,13 @@
             // when the object is no longer being dragged, orbitControls can be enabled again
             controls.enabled = true;
         })
+      
+        // Adjusting camera aspect to account for window rezise
+        window.addEventListener('resize', function (event) {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
         // function to allow the scene to continuously update 
         function animate() {
@@ -275,7 +375,10 @@
         }
 
         animate();
+
     </script>
+
 </body>
 
-</html>
+
+/html>
