@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
-
 <head>
     <title>2D Puzzle</title>
 </head>
@@ -14,7 +12,6 @@
         import * as THREE from 'three';
         import { DragControls } from 'three/addons/controls/DragControls.js';
 
-
         // create new scene 
         var scene = new THREE.Scene();
 
@@ -22,7 +19,7 @@
         var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 3000);
         camera.position.y = 250;
         camera.position.x = 0;
-        camera.position.z = 1500;
+        camera.position.z = 3000;
         camera.lookAt(new THREE.Vector3(0.0, 250, 0));
         scene.add(camera);
 
@@ -36,9 +33,9 @@
 
         // Creates a Triangle
         function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
-            this.vertices = [...v1, ...v2, ...v3];
+            this.vertices = [...v1, ...v2, ...v3, ...v1, ...v3,...v2];
 
-            this.colors = [...v1Col, ...v2Col, ...v3Col];
+            this.colors = [...v1Col, ...v2Col, ...v3Col, ...v1Col, ...v3Col, ...v2Col];
 
             this.geometry = new THREE.BufferGeometry();
             this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
@@ -48,13 +45,6 @@
             scene.add(this.mesh);
 
         }
-
-        // create a new orbitControls obj and set it to the center of the octagon
-        var controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 250, 0);
-
-        var axesHelper = new THREE.AxesHelper(1000);
-        scene.add(axesHelper)
 
         var listener = new THREE.AudioListener();
         camera.add(listener);
@@ -114,11 +104,10 @@
             // Height of the cells
             this.verGap = Math.floor(Math.abs(this.height / this.verCells));
 
-
-            // Array of ancher points in the cells
+            // Array of anchor points in the cells
             this.points = [];
 
-            // Array to check if ancher point has been occupied
+            // Array to check if anchor point has been occupied
             this.occupied = [];
 
             // Vertex to act as the template for the ancher points
@@ -130,7 +119,7 @@
                 // Loop will iterate horizonatlly (act as the X)
                 for (var x = 0; x < this.horCells; x++) {
 
-                    // Adds an ancher point and adds false
+                    // Adds an anchor point and adds false
                     this.points.push([this.template[0] + (x * this.horGap), this.template[1] + (y * this.verGap), 0])
                     this.occupied.push(false);
                 }
@@ -222,7 +211,6 @@
             // add the group of triangles to the scene
             scene.add(this.group);
         }
-
         // function to handle snapping  
         function snapTo(triangles, targetVector, threshold) {
             // for every triangle in the array of triangles 
@@ -254,15 +242,15 @@
         var octagon2 = new Octagon(
 
             // origin vertex
-            [0 - 400, 130 + 200, -10], [0.1, 0.2, 0.1], //v1
-            [100 - 400, 380 + 200, -10], [0.2, 0.3, 0.1], // v2
-            [250 - 400, 230 + 200, -10], [0.2, 0.3, 0.1], // v3
-            [250 - 400, 30 + 200, -10], [0.2, 0.3, 0.1], // v4
-            [100 - 400, -120 + 200, -10], [0.2, 0.3, 0.1], // v5
-            [-100 - 400, -120 + 200, -10], [0.2, 0.3, 0.1], //v6
-            [-250 - 400, 30 + 200, -10], [0.2, 0.3, 0.1], // v7
-            [-250 - 400, 230 + 200, -10], [0.2, 0.3, 0.1], // v8
-            [-100 - 400, 380 + 200, -10], [0.2, 0.3, 0.1], // v9
+            [0 - 400, 130 + 200, 0], [0.1, 0.2, 0.1], //v1
+            [100 - 400, 380 + 200, 0], [0.2, 0.3, 0.1], // v2
+            [250 - 400, 230 + 200, 0], [0.2, 0.3, 0.1], // v3
+            [250 - 400, 30 + 200, 0], [0.2, 0.3, 0.1], // v4
+            [100 - 400, -120 + 200, 0], [0.2, 0.3, 0.1], // v5
+            [-100 - 400, -120 + 200, 0], [0.2, 0.3, 0.1], //v6
+            [-250 - 400, 30 + 200, 0], [0.2, 0.3, 0.1], // v7
+            [-250 - 400, 230 + 200, 0], [0.2, 0.3, 0.1], // v8
+            [-100 - 400, 380 + 200, 0], [0.2, 0.3, 0.1], // v9
         )
 
         var octagon = new Octagon(
@@ -346,18 +334,13 @@
                 sound.play();
             })
 
-            // this momentarily disables the orbit controls to allow for static clicking and dragging 
-            controls.enabled = false;
-
         })
       
         // eventListener which detects when an object is no longer being dragged
         dControls.addEventListener('dragend', function (event) {
             // snapTo function which occurs when an object is let go of in the range of intersection
             var targetVector = new THREE.Vector3(0, 0, 0);
-            snapTo(octagon.triangles, targetVector, 40) == true
-            // when the object is no longer being dragged, orbitControls can be enabled again
-            controls.enabled = true;
+            snapTo(octagon.triangles, targetVector, 40)
         })
       
         // Adjusting camera aspect to account for window rezise
@@ -370,7 +353,6 @@
         // function to allow the scene to continuously update 
         function animate() {
             requestAnimationFrame(animate);
-            controls.update();
             renderer.render(scene, camera);
         }
 
@@ -380,5 +362,3 @@
 
 </body>
 
-
-/html>
