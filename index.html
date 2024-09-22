@@ -49,7 +49,7 @@
         var listener = new THREE.AudioListener();
         camera.add(listener);
 
-
+      
         // a function to create a triangle object 
         function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
             this.vertices = [
@@ -90,7 +90,13 @@
             scene.add(this.mesh);
         }
 
-
+        // Function to create a square
+        function Square(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col) {
+            this.tri1 = new Triangle(v1, v1Col, v2, v2Col, v3, v3Col);
+            this.tri2 = new Triangle(v1, v1Col, v3, v3Col, v4, v4Col);
+        }
+          
+          
         // create an octagon object which passes in 9 vertices and 9 colors for each vertex
         function Octagon(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, v5, v5Col, v6, v6Col, v7, v7Col, v8, v8Col, v9, v9Col) {
 
@@ -182,6 +188,54 @@
         )
 
         var seeds = new watermelonSeeds(octagon.triangles);
+          
+      
+          // Stub: Randomize the placement of the pieces
+        /* for (var i = 0; i < octagon.triangles.length; i++) {
+            octagon.triangles[i].mesh.translateX(getRandomNumber(500, 900));
+            octagon.triangles[i].mesh.translateY(getRandomNumber(-300, 400));
+        } */
+
+        /** Generate a random integer number between min and max. */
+        function getRandomNumber(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /** Create points within the octagon's range. */
+        function VertexPoint() {
+            var points = [];
+
+            points.push(0, 265, 0); //v1
+            points.push(-125, 15, 0); //v2
+            points.push(125, 15, 0); //v3
+            points.push(250, 140, 0); //v4
+            points.push(250, 390, 0); //v5
+            points.push(125, 515, 0); //v6
+
+            points.push(60, 515, 0); //v6Out
+            points.push(60, 387, 0); //v6In
+            points.push(-60, 515, 0); //v7Out
+            points.push(-60, 387, 0); //v7In
+
+            
+            points.push(-125, 515, 0); //v7
+            points.push(-250, 390, 0); //v8
+            points.push(-250, 140, 0); //v9
+
+            // Render the points
+            this.render = function () {
+                var geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+                // Make the points invisible after ensuring the snap function works
+                var material = new THREE.PointsMaterial({ size: 10, sizeAttenuation: false, color: 0xab2323 }); // Red color for now
+                var point = new THREE.Points(geometry, material);
+                scene.add(point);
+            }
+        }
+
+        // Display the points
+        // var pt = new VertexPoint();
+        // pt.render();
 
         // create an array of objects
         var objects = [octagon.group];
