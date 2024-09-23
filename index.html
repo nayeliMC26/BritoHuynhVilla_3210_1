@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <title>2D Puzzle</title>
 </head>
@@ -16,11 +17,11 @@
         var scene = new THREE.Scene();
 
         // set up the camera 
-        var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 3000);
-        camera.position.y = 250;
-        camera.position.x = 0;
-        camera.position.z = 3000;
-        camera.lookAt(new THREE.Vector3(0.0, 250, 0));
+        var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 5000);
+        camera.position.x = 600;
+        camera.position.y = 275;
+        camera.position.z = 4000;
+        camera.lookAt(new THREE.Vector3(600, 275, 0));
         scene.add(camera);
 
         // create renderer 
@@ -33,7 +34,7 @@
 
         // Creates a Triangle
         function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
-            this.vertices = [...v1, ...v2, ...v3, ...v1, ...v3,...v2];
+            this.vertices = [...v1, ...v2, ...v3, ...v1, ...v3, ...v2];
 
             this.colors = [...v1Col, ...v2Col, ...v3Col, ...v1Col, ...v3Col, ...v2Col];
 
@@ -55,15 +56,23 @@
             this.vertices = [...v1, ...v2, ...v3];
             this.color = col;
 
-            // Vertex that will act as the origin of the puzzle piece (bottom must vertex)
-            this.origin = [v1[0], v1[1], v1[2]];
-
             // use bufferGeometry to pass in the vertices and colors and create the triangles
             var geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
             var material = new THREE.MeshBasicMaterial({ color: this.color });
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
+
+            // Bouding box of the piece
+            this.boundingBox = new THREE.Box3();
+            this.boundingBox.setFromObject(this.mesh);
+
+            // Vertex that will act as the origin of the puzzle piece (bottom must vertex)
+            this.origin = [this.boundingBox.min.x, this.boundingBox.min.y, this.boundingBox.min.z];
+
+            // Width and height of the piece
+            this.width = this.boundingBox.max.x - this.boundingBox.min.x;
+            this.height = this.boundingBox.max.y - this.boundingBox.min.y;
 
             // Funtion to move puzzle piece
             this.move = function (newVertex) {
@@ -75,6 +84,9 @@
 
                 // Updates the origin vertex
                 this.origin = newVertex;
+
+                // Updates bounding box
+                this.boundingBox.setFromObject(this.mesh);
             }
 
             // Adds puzzle piece into arra of objects that can be moved
@@ -82,27 +94,30 @@
         }
 
         // Creates a Puzzle Board
-        function puzzleBoard(v1, v1Col, v2, v2Col, v3, v3Col, v4, v4Col, horizontal, vertical) {
-            this.vertices = [...v1, ...v2, ...v3, ...v1, ...v3, ...v4];
-            this.colors = [...v1Col, ...v2Col, ...v3Col, ...v1Col, ...v3Col, ...v4Col];
-
-            // Amount of cells horizontally
-            this.horCells = horizontal;
-
-            // Amount of cells vertically
-            this.verCells = vertical;
-
+        function puzzleBoard(v1, col, cellWidth, cellHeight, horizontalCells, verticalCells) {
             // Width of the Puzzle Board
-            this.width = v3[0] - v1[0];
+            this.width = (cellWidth * horizontalCells) + (cellWidth * (horizontalCells * .15));
 
             // Height of the Puzzle Board
-            this.height = v3[1] - v1[1];
+            this.height = (cellHeight * verticalCells) + (cellHeight * (verticalCells * .15));
+
+            this.vertices = [
+                ...v1, v1[0] + this.width, v1[1], v1[2], v1[0] + this.width, v1[1] + this.height, v1[2], // Bottom right triangle
+                ...v1, v1[0] + this.width, v1[1] + this.height, v1[2], v1[0], v1[1] + this.height, v1[2] // Top left triangle
+            ];
+            this.color = col;
+
+            // Amount of cells horizontally
+            this.horCells = horizontalCells;
+
+            // Amount of cells vertically
+            this.verCells = verticalCells;
 
             // Width of the cells
-            this.horGap = Math.floor(Math.abs(this.width / this.horCells));
+            this.horGap = cellWidth + (cellWidth * .1);
 
             // Height of the cells
-            this.verGap = Math.floor(Math.abs(this.height / this.verCells));
+            this.verGap = cellHeight + (cellHeight * .1);
 
             // Array of anchor points in the cells
             this.points = [];
@@ -111,8 +126,7 @@
             this.occupied = [];
 
             // Vertex to act as the template for the ancher points
-            this.template = [v1[0] + (this.horGap / 2), v1[1] + (this.horGap / 2)];
-
+            this.template = [v1[0] + (this.horGap * .1), v1[1] + (this.verGap * .1)];
             // Loop will iterate vertically (act as the Y)
             for (var y = 0; y < this.verCells; y++) {
 
@@ -127,18 +141,16 @@
 
             var geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
-            var material = new THREE.MeshBasicMaterial({ vertexColors: true });
+            var material = new THREE.MeshBasicMaterial({ color: this.color });
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
         }
-
 
         // Moves the puzzle pieces from where they're created to the puzzle board
         function relocate(pieces, board) {
 
             // Index to randomly select a point
-            var current = Math.floor(Math.random() * (board.points.length - 1));
+            var current = Math.floor(Math.random() * 100) % board.points.length;
             for (var i = 0; i < pieces.length; i++) {
                 // If the current points is occupied get a new index
                 while (board.occupied[current]) {
@@ -146,7 +158,7 @@
                 }
 
                 // Moves the piece and sets point to occupied
-                pieces[i].move(board.points[current])
+                pieces[i].move(board.points[current]);
                 board.occupied[current] = true;
 
             }
@@ -156,27 +168,42 @@
         // Array of moveable objects (mesh)
         var moveableObjects = [];
 
-        var piecesBoard = new puzzleBoard(
-            [650, -675, -1], [1, 1, 0],
-            [1900, -675, -1], [1, 0, 1],
-            [1900, 1325, -1], [0, 1, 1],
-            [650, 1325, -1], [1, 1, 1],
-            3, 4
-        );
+        { // var puzzlePieces
+            var puzzlePieces = [
+                new puzzlePiece([-117.5, -235, 0], [117.5, -235, 0], [117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([-117.5, -235, 0], [117.5, 235, 0], [-117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([117.5, -235, 0], [235, -117.5, 0], [117.5, -117.5, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([117.5, -117.5, 0], [235, -117.5, 0], [235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([117.5, -117.5, 0], [235, 117.5, 0], [117.5, 117.5, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([117.5, 117.5, 0], [235, 117.5, 0], [117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([-235, 117.5, 0], [-117.5, 117.5, 0], [-117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([-235, -117.5, 0], [-117.5, -117.5, 0], [-235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([-117.5, -117.5, 0], [-117.5, 117.5, 0], [-235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
+                new puzzlePiece([-117.5, -235, 0], [-117.5, -117.5, 0], [-235, -117.5, 0], [1, 0, 0], [1, 1, 1])
+            ];
+        }
 
-        var puzzlePieces = [
-            new puzzlePiece([-117.5, -235, 0], [117.5, -235, 0], [117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([-117.5, -235, 0], [117.5, 235, 0], [-117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([117.5, -235, 0], [235, -117.5, 0], [117.5, -117.5, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([117.5, -117.5, 0], [235, -117.5, 0], [235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([117.5, -117.5, 0], [235, 117.5, 0], [117.5, 117.5, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([117.5, 117.5, 0], [235, 117.5, 0], [117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([-235, 117.5, 0], [-117.5, 117.5, 0], [-117.5, 235, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([-235, -117.5, 0], [-117.5, -117.5, 0], [-235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([-117.5, -117.5, 0], [-117.5, 117.5, 0], [-235, 117.5, 0], [1, 0, 0], [1, 1, 1]),
-            new puzzlePiece([-117.5, -235, 0], [-117.5, -117.5, 0], [-235, -117.5, 0], [1, 0, 0], [1, 1, 1])
-        ];
+        // Max width and height of all the piecex
+        var maxWidth = 0;
+        var maxHeight = 0;
 
+        // Getting the values for the max width and height
+        for (var i = 0; i < puzzlePieces.length; i++) {
+            if (puzzlePieces[i].width > maxWidth) {
+                maxWidth = puzzlePieces[i].width;
+            }
+
+            if (puzzlePieces[i].height > maxHeight) {
+                maxHeight = puzzlePieces[i].height;
+            }
+        }
+
+        { // var piecesBoard
+            var piecesBoard = new puzzleBoard(
+                [650, -675, -10], 0x99ffff, maxWidth, maxHeight,
+                3, 4
+            );
+        }
 
         relocate(puzzlePieces, piecesBoard);
 
@@ -211,6 +238,7 @@
             // add the group of triangles to the scene
             scene.add(this.group);
         }
+
         // function to handle snapping  
         function snapTo(triangles, targetVector, threshold) {
             // for every triangle in the array of triangles 
@@ -239,42 +267,39 @@
             scene.add(point);
         }
 
-        var octagon2 = new Octagon(
+        { // var ocatgon@
+            var octagon2 = new Octagon(
 
-            // origin vertex
-            [0 - 400, 130 + 200, 0], [0.1, 0.2, 0.1], //v1
-            [100 - 400, 380 + 200, 0], [0.2, 0.3, 0.1], // v2
-            [250 - 400, 230 + 200, 0], [0.2, 0.3, 0.1], // v3
-            [250 - 400, 30 + 200, 0], [0.2, 0.3, 0.1], // v4
-            [100 - 400, -120 + 200, 0], [0.2, 0.3, 0.1], // v5
-            [-100 - 400, -120 + 200, 0], [0.2, 0.3, 0.1], //v6
-            [-250 - 400, 30 + 200, 0], [0.2, 0.3, 0.1], // v7
-            [-250 - 400, 230 + 200, 0], [0.2, 0.3, 0.1], // v8
-            [-100 - 400, 380 + 200, 0], [0.2, 0.3, 0.1], // v9
-        )
+                // origin vertex
+                [0 - 400, 130 + 200, 0], [0.1, 0.2, 0.1], //v1
+                [100 - 400, 380 + 200, 0], [0.2, 0.3, 0.1], // v2
+                [250 - 400, 230 + 200, 0], [0.2, 0.3, 0.1], // v3
+                [250 - 400, 30 + 200, 0], [0.2, 0.3, 0.1], // v4
+                [100 - 400, -120 + 200, 0], [0.2, 0.3, 0.1], // v5
+                [-100 - 400, -120 + 200, 0], [0.2, 0.3, 0.1], //v6
+                [-250 - 400, 30 + 200, 0], [0.2, 0.3, 0.1], // v7
+                [-250 - 400, 230 + 200, 0], [0.2, 0.3, 0.1], // v8
+                [-100 - 400, 380 + 200, 0], [0.2, 0.3, 0.1], // v9
+            );
+        }
 
-        var octagon = new Octagon(
+        { // var octagon
+            var octagon = new Octagon(
 
-            // origin vertex
-            [0 - 400, 325, 0], [0.9, 0.1, 0.1],
-            [224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
-            [93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
-            [-93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
-            [-224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
-            [-224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
-            [-93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
-            [93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
-            [224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
-        )
+                // origin vertex
+                [0 - 400, 325, 0], [0.9, 0.1, 0.1],
+                [224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
+                [93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
+                [-93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
+                [-224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
+                [-224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
+                [-93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
+                [93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
+                [224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
+            );
+        }
 
         var seeds = new watermelonSeeds(octagon.triangles);
-
-
-        // Stub: Randomize the placement of the pieces
-        /* for (var i = 0; i < octagon.triangles.length; i++) {
-            octagon.triangles[i].mesh.translateX(getRandomNumber(500, 900));
-            octagon.triangles[i].mesh.translateY(getRandomNumber(-300, 400));
-        } */
 
         /** Generate a random integer number between min and max. */
         function getRandomNumber(min, max) {
