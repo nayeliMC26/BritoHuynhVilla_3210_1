@@ -223,6 +223,8 @@
             // create a group object to enable moving all of the triangles within the octagon
             this.group = new THREE.Group();
 
+            console.log(this.vertices[0]);
+
             // create 8 triangles to form an octagon
             this.triangles = [
                 new Triangle(this.vertices[0], this.colors, this.vertices[1], this.colors, this.vertices[2], this.colors),
@@ -284,6 +286,8 @@
         ];
         const mainBoardColors = [0.2, 0.3, 0.1];
 
+        console.log("mainboard")
+
         const octagon2 = new Octagon(mainBoardVertices, mainBoardColors);
 
 
@@ -307,26 +311,29 @@
         // All of the pieces will be the same color
         const pieceColors = [0.9, 0.2, 0.2];
 
+        console.log("pieeces")
+
         var octagon = new Octagon(pieceVertices, pieceColors);
 
         var seeds = new watermelonSeeds(octagon.triangles);
 
 
-        { // var octagon
-            var octagon = new Octagon(
 
-                // origin vertex
-                [0 - 400, 325, 0], [0.9, 0.1, 0.1],
-                [224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
-                [93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
-                [-93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
-                [-224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
-                [-224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
-                [-93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
-                [93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
-                [224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
-            );
-        }
+        // { // var octagon
+        //     var octagon = new Octagon(
+// 
+        //         // origin vertex
+        //         [0 - 400, 325, 0], [0.9, 0.1, 0.1],
+        //         [224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
+        //         [93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
+        //         [-93.0 - 400, 549.51 + 5, 0], [0.9, 0.2, 0.2],
+        //         [-224.51 - 400, 418.99 + 5, 0], [0.9, 0.2, 0.2],
+        //         [-224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
+        //         [-93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
+        //         [93 - 400, 100.49 + 5, 0], [0.9, 0.2, 0.2],
+        //         [224.51 - 400, 231.01 + 5, 0], [0.9, 0.2, 0.2],
+        //     );
+        // }
 
         var seeds = new watermelonSeeds(octagon.triangles);
 
