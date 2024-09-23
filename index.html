@@ -5,7 +5,6 @@
     <title>2D Puzzle</title>
 </head>
 
-
 <body>
     <canvas id="myCanvas" width="1200" height="900"></canvas>
 
@@ -93,7 +92,7 @@
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
 
-            // Bouding box of the piece
+            // Bounding box of the piece
             this.boundingBox = new THREE.Box3();
             this.boundingBox.setFromObject(this.mesh);
 
@@ -104,7 +103,7 @@
             this.width = this.boundingBox.max.x - this.boundingBox.min.x;
             this.height = this.boundingBox.max.y - this.boundingBox.min.y;
 
-            // Funtion to move puzzle piece
+            // Function to move puzzle piece
             this.move = function (newVertex) {
                 // Moves it along the X axis
                 this.mesh.translateX(newVertex[0] - this.origin[0]);
@@ -119,7 +118,7 @@
                 this.boundingBox.setFromObject(this.mesh);
             }
 
-            // Adds puzzle piece into arra of objects that can be moved
+            // Adds puzzle piece into array of objects that can be moved
             moveableObjects.push(this.mesh);
         }
 
@@ -155,12 +154,12 @@
             // Array to check if anchor point has been occupied
             this.occupied = [];
 
-            // Vertex to act as the template for the ancher points
+            // Vertex to act as the template for the anchor points
             this.template = [v1[0] + (this.horGap * .1), v1[1] + (this.verGap * .1)];
             // Loop will iterate vertically (act as the Y)
             for (var y = 0; y < this.verCells; y++) {
 
-                // Loop will iterate horizonatlly (act as the X)
+                // Loop will iterate horizontally (act as the X)
                 for (var x = 0; x < this.horCells; x++) {
 
                     // Adds an anchor point and adds false
@@ -174,38 +173,6 @@
             var material = new THREE.MeshBasicMaterial({ color: this.color });
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
-        }
-
-        /** Create points within the octagon's range. Used to help plot the vertices of the puzzle pieces. */
-        function VertexPoint() {
-            var points = [];
-
-            points.push(0, 265, 0); //v1
-            points.push(-125, 15, 0); //v2
-            points.push(125, 15, 0); //v3
-            points.push(250, 140, 0); //v4
-            points.push(250, 390, 0); //v5
-            points.push(125, 515, 0); //v6
-
-            points.push(60, 515, 0); //v6Out
-            points.push(60, 387, 0); //v6In
-            points.push(-60, 515, 0); //v7Out
-            points.push(-60, 387, 0); //v7In
-
-
-            points.push(-125, 515, 0); //v7
-            points.push(-250, 390, 0); //v8
-            points.push(-250, 140, 0); //v9
-
-            // Render the points
-            this.render = function () {
-                var geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-                // Make the points invisible after ensuring the snap function works
-                var material = new THREE.PointsMaterial({ size: 10, sizeAttenuation: false, color: 0xab2323 }); // Red color for now
-                var point = new THREE.Points(geometry, material);
-                scene.add(point);
-            }
         }
 
         function MakePuzzle(vertices, colors) {
@@ -294,6 +261,8 @@
         ];
         const mainBoardColors = [0.2, 0.3, 0.1];
 
+        console.log("mainboard");
+
         const octagon2 = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
@@ -310,7 +279,6 @@
             [317.5, 130.52, 0], // v9
             [317.5, 318.5, 0], // v10
             [131.51, 318.5, 0] // v11
-
         ];
 
         // All of the pieces will be the same color
@@ -340,7 +308,7 @@
                 [650, -675, -10], 0x99ffff, maxWidth, maxHeight,
                 3, 4
             );
-        }
+        } 
 
         relocate(puzzle.pieces, piecesBoard);
 
@@ -367,7 +335,7 @@
             snapTo(puzzle.pieces, targetVector, 40)
         })
 
-        // Adjusting camera aspect to account for window rezise
+        // Adjusting camera aspect to account for window resize
         window.addEventListener('resize', function (event) {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
