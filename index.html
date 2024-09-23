@@ -257,11 +257,11 @@
         const mainBoardColors = [0.2, 0.3, 0.1];
 
         const octagon2 = new Octagon(mainBoardVertices, mainBoardColors);
-        
+
 
         // List of vertices for the pieces
         var pieceVertices = [
-            [0 - 400, 325, 0], // origin vertex
+            [0 - 400, 325, 0], // origin vertex, v1
             [224.51 - 400, 418.99 + 5, 0],
             [93.0 - 400, 549.51 + 5, 0],
             [-93.0 - 400, 549.51 + 5, 0],
@@ -269,7 +269,11 @@
             [-224.51 - 400, 231.01 + 5, 0],
             [-93 - 400, 100.49 + 5, 0],
             [93 - 400, 100.49 + 5, 0],
-            [224.51 - 400, 231.01 + 5, 0]
+            [224.51 - 400, 231.01 + 5, 0],
+            [125, 515, 0], //v6out
+            [125, 515, 0], //v6in
+            [-125, 515, 0], //v7out
+            [-125, 515, 0] //v7in
         ];
 
         // All of the pieces will be the same color
@@ -293,7 +297,7 @@
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
-        /** Create points within the octagon's range. */
+        /** Create points within the octagon's range. Used to help plot the vertices of the puzzle pieces. */
         function VertexPoint() {
             var points = [];
 
