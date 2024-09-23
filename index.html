@@ -11,6 +11,7 @@
 
     <script type="module">
         import * as THREE from 'three';
+        import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'; // for combining the pieces
         import { DragControls } from 'three/addons/controls/DragControls.js';
 
         // create new scene 
@@ -235,8 +236,16 @@
                 new Triangle(this.vertices[0], this.colors, this.vertices[6], this.colors, this.vertices[7], this.colors),
                 new Triangle(this.vertices[0], this.colors, this.vertices[7], this.colors, this.vertices[8], this.colors),
                 new Triangle(this.vertices[0], this.colors, this.vertices[8], this.colors, this.vertices[1], this.colors)
+
+                // Creating smaller triangles
+                /* new Triangle(this.vertices[0], this.colors, this.vertices[10], this.colors, this.vertices[12], this.colors),
+                   new Triangle(this.vertices[9], this.colors, this.vertices[10], this.colors, this.vertices[5], this.colors),
+                   new Triangle(this.vertices[6], this.colors, this.vertices[12], this.colors, this.vertices[11], this.colors),
+                   new Square(this.vertices[1], this.colors, this.vertices[12], this.colors, this.vertices[10], this.colors, this.vertices[9], this.colors)
+                */
+                
             ];
-            // for each loop to add all meshes to the group and display bounding boxes for them
+            // for each loop to add all meshes to the group and display bounding boxes for them 
             this.triangles.forEach(tri => {
                 this.group.add(tri.mesh);
             });
@@ -286,7 +295,7 @@
         ];
         const mainBoardColors = [0.2, 0.3, 0.1];
 
-        console.log("mainboard")
+        console.log("mainboard");
 
         const octagon2 = new Octagon(mainBoardVertices, mainBoardColors);
 
@@ -302,17 +311,16 @@
             [-93 - 400, 100.49 + 5, 0],     //v7
             [93 - 400, 100.49 + 5, 0],      //v8
             [224.51 - 400, 231.01 + 5, 0],  //v9
-
-            [125, 515, 0], //v6out
-            [125, 515, 0], //v6in
-            [-125, 515, 0], //v7out
-            [-125, 515, 0] //v7in
+            [-355, 554, 0], //v6out, [9]
+            [-355, 440, 0], //v6in, [10]
+            [-450, 554, 0], //v7out, [11]
+            [-450, 440, 0] //v7in, [12]
         ];
 
         // All of the pieces will be the same color
         const pieceColors = [0.9, 0.2, 0.2];
 
-        console.log("pieeces")
+        console.log("pieces");
 
         var octagon = new Octagon(pieceVertices, pieceColors);
 
@@ -355,10 +363,10 @@
             points.push(-224.51 - 400, 418.99 + 5, 0); //v5
             points.push(-224.51 - 400, 231.01 + 5, 0); //v6
 
-            points.push(60 - 400, 515 + 5, 0); //v6Out
-            points.push(60 - 400, 387 + 5, 0); //v6In
-            points.push(-60 - 400, 515 + 5, 0); //v7Out
-            points.push(-60 - 400, 387 + 5, 0); //v7In
+            points.push(-355, 554, 0); //v6Out
+            points.push(-355, 440, 0); //v6In
+            points.push(-450, 554, 0); //v7Out
+            points.push(-450, 440, 0); //v7In
 
 
             points.push(-93 - 400, 100.49 + 5, 0); //v7
@@ -377,8 +385,8 @@
         }
 
         // Display the points
-        // var pt = new VertexPoint();
-        // pt.render();
+        var pt = new VertexPoint();
+        pt.render();
 
         // create an array of objects
         var objects = [octagon.group];
