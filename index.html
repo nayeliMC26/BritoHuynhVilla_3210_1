@@ -222,7 +222,12 @@
             for (var i = 0; i < triangles.length; i++) {
                 // if the position of the current triangle's distance is less than or equal to the threshold
                 if (triangles[i].mesh.position.distanceTo(targetVector) <= threshold) {
-                    triangles[i].mesh.position.copy(targetVector)
+                    // A piece has been placed around its correct location. Snap it into place.
+                    triangles[i].mesh.position.copy(targetVector);
+                    // Lock the piece into place by disabling its dragging capabilities
+
+                    // TODO remove the drag controls for the 'i'th element in moveableObjects
+                    console.log("A piece has been placed correctly!");
                 }
             }
         }
@@ -286,7 +291,7 @@
 
         var seeds = new watermelonSeeds(puzzle.triangles);
 
-        // Max width and height of all the piecex
+        // Max width and height of all the pieces
         var maxWidth = 0;
         var maxHeight = 0;
 
@@ -306,7 +311,7 @@
                 [650, -675, -10], 0x99ffff, maxWidth, maxHeight,
                 3, 4
             );
-        } 
+        }
 
         relocate(puzzle.pieces, piecesBoard);
 
@@ -322,16 +327,16 @@
                 sound.setLoop(false);
                 sound.setVolume(0.5);
                 sound.play();
-            })
+            });
 
-        })
+        });
 
         // eventListener which detects when an object is no longer being dragged
         dControls.addEventListener('dragend', function (event) {
             // snapTo function which occurs when an object is let go of in the range of intersection
             var targetVector = new THREE.Vector3(0, 0, 0);
             snapTo(puzzle.pieces, targetVector, 40)
-        })
+        });
 
         // Adjusting camera aspect to account for window resize
         window.addEventListener('resize', function (event) {
