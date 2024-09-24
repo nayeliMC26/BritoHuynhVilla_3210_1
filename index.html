@@ -215,20 +215,42 @@
             }
 
         }
-
+        var correctCount = 1;
+        var hasBeenSnapped = false;
         // function to handle snapping  
         function snapTo(triangles, targetVector, threshold) {
+            var snapCount = 0;
             // for every triangle in the array of triangles 
             for (var i = 0; i < triangles.length; i++) {
                 // if the position of the current triangle's distance is less than or equal to the threshold
                 if (triangles[i].mesh.position.distanceTo(targetVector) <= threshold) {
                     // A piece has been placed around its correct location. Snap it into place.
                     triangles[i].mesh.position.copy(targetVector);
+                    snapCount++;
+                    hasBeenSnapped = true;
+                }
+                // Check if a piece is actually in its correct location after the snapping function above
+                if ((correctCount == snapCount) && hasBeenSnapped) {
+                    correctCount++;
+                    snapCount = correctCount;
                     // Lock the piece into place by disabling its dragging capabilities
 
-                    // TODO remove the drag controls for the 'i'th element in moveableObjects
-                    console.log("A piece has been placed correctly!");
+                    // TODO need a way to deactivate DragControls for only that piece
+                    // dControls.deactivate();
+
+                    // Play the "correct" sound effect
+                    var correctSound = new THREE.Audio(listener);
+                    var audioLoader2 = new THREE.AudioLoader();
+                    audioLoader2.load('./assets/sounds/correct.mp3', function (buffer) {
+                        correctSound.setBuffer(buffer);
+                        correctSound.setLoop(false);
+                        correctSound.setVolume(0.5);
+                        correctSound.play();
+                    });
+
+                    hasBeenSnapped = false; // Reset the check
                 }
+                
             }
         }
 
@@ -335,7 +357,7 @@
         dControls.addEventListener('dragend', function (event) {
             // snapTo function which occurs when an object is let go of in the range of intersection
             var targetVector = new THREE.Vector3(0, 0, 0);
-            snapTo(puzzle.pieces, targetVector, 40)
+            snapTo(puzzle.pieces, targetVector, 40);
         });
 
         // Adjusting camera aspect to account for window resize
