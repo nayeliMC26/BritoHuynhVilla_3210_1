@@ -55,9 +55,6 @@
             this.vertices = vertices;
             this.colors = colors;
 
-            // create a group object to enable moving all of the triangles within the octagon
-            this.group = new THREE.Group();
-
             // create 8 triangles to form an octagon
             this.triangles = [
                 new Triangle(this.vertices[0], this.colors, this.vertices[1], this.colors, this.vertices[2], this.colors),
@@ -69,14 +66,6 @@
                 new Triangle(this.vertices[0], this.colors, this.vertices[7], this.colors, this.vertices[8], this.colors),
                 new Triangle(this.vertices[0], this.colors, this.vertices[8], this.colors, this.vertices[1], this.colors)
             ];
-
-
-            // for each loop to add all meshes to the group and display bounding boxes for them
-            this.triangles.forEach(tri => {
-                this.group.add(tri.mesh);
-            });
-            // add the group of triangles to the scene
-            scene.add(this.group);
         }
 
         // Creates a Puzzle Piece
@@ -96,7 +85,7 @@
             this.boundingBox = new THREE.Box3();
             this.boundingBox.setFromObject(this.mesh);
 
-            // Vertex that will act as the origin of the puzzle piece (bottom must vertex)
+            // Vertex that will act as the origin of the puzzle piece (bottom most vertex)
             this.origin = [this.boundingBox.min.x, this.boundingBox.min.y, this.boundingBox.min.z];
 
             // Width and height of the piece
@@ -179,10 +168,6 @@
         function MakePuzzle(vertices, colors) {
             this.vertices = vertices;
             this.colors = colors;
-
-            // create a group object to enable moving all of the triangles within the octagon
-            this.group = new THREE.Group();
-
             // create 8 triangles to form an octagon
             this.pieces = [
                 new puzzlePiece(this.vertices[0], this.vertices[1], this.vertices[4], this.colors), // t1
@@ -247,22 +232,6 @@
             }
         }
 
-        function watermelonSeeds(triangles) {
-            // use the vertices of the triangle + scalar create fractal like pattern
-            var points = [];
-            points.push(174.51, 329.51, 5);
-            points.push(274.51, 329.51, 5);
-            points.push(224.51, 269.51, 5);
-            points.push(224.51, 394.51, 5);
-            points.push(224.51, 324.51, 5);
-            points.push(149.51, 394.51, 5);
-            points.push(299.51, 394.51, 5);
-            var geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-            var material = new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, color: 0x000000 }); // Red color for now
-            var point = new THREE.Points(geometry, material);
-            scene.add(point);
-        }
 
         // Array of moveable objects (mesh)
         var moveableObjects = [];
@@ -304,8 +273,6 @@
 
         var puzzle = new MakePuzzle(pieceVertices, pieceColors);
 
-        var seeds = new watermelonSeeds(puzzle.triangles);
-
         // Max width and height of all the pieces
         var maxWidth = 0;
         var maxHeight = 0;
@@ -330,7 +297,7 @@
 
         relocate(puzzle.pieces, piecesBoard);
 
-        // pass in the array to the dragControls object
+        // pass in the array of moveableObjects into the dragControls
         var dControls = new DragControls(moveableObjects, camera, renderer.domElement);
 
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
