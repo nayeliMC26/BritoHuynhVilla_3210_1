@@ -203,7 +203,7 @@
         }
 
         var correctCount = 0;
-
+        var numOfPieces;
 
         /** A function to handle snapping a piece. */
         function snapTo(triangles, targetVector, threshold) {
@@ -224,9 +224,16 @@
                 // Check if a new piece is actually in its correct location after the snapping function above
                 if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
                     correctCount++;
-                    // Play the "correct" sound effect
-                    playSound('./assets/sounds/correct.mp3');
-                    break; // terminate from the for loop
+                    if (correctCount == numOfPieces) {
+                        // Play the "winning" sound
+                        playSound('./assets/sounds/correct.mp3');
+                        console.log("You Win");
+                        break;
+                    } else {
+                        // Play the "correct" sound effect
+                        playSound('./assets/sounds/correct.mp3');
+                        break;
+                    }
                 }
 
             }
@@ -272,6 +279,7 @@
         const pieceColors = [0.9, 0.2, 0.2];
 
         var puzzle = new MakePuzzle(pieceVertices, pieceColors);
+        numOfPieces = puzzle.pieces.length;
 
         // Max width and height of all the pieces
         var maxWidth = 0;
@@ -302,7 +310,7 @@
 
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
         dControls.addEventListener('dragstart', function (event) {
-            playSound('./assets/sounds/mouse click final.mp3');
+            playSound('./assets/sounds/mouse_click_final.mp3');
         });
 
         // eventListener which detects when an object is no longer being dragged
