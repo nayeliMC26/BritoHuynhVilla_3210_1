@@ -25,6 +25,7 @@
 
         // create renderer 
         var renderer = new THREE.WebGLRenderer({ canvas: myCanvas, antialias: true });
+
         // set the background color of the canvas
         renderer.setClearColor(0xecf987);
         renderer.setPixelRatio(window.devicePixelRatio);
@@ -35,49 +36,66 @@
         camera.add(listener);
 
         // Creates a Triangle
-        function Triangle(v1, v1Col, v2, v2Col, v3, v3Col) {
-            this.vertices = [...v1, ...v2, ...v3, ...v1, ...v3, ...v2];
+        function Triangle(v1, v2, v3, col) {
+            this.vertices = [];
+            addVector(this.vertices, v1);
+            addVector(this.vertices, v2);
+            addVector(this.vertices, v3);
+            addVector(this.vertices, v1);
+            addVector(this.vertices, v3);
+            addVector(this.vertices, v2);
 
-            this.colors = [...v1Col, ...v2Col, ...v3Col, ...v1Col, ...v3Col, ...v2Col];
+            this.color = col;
 
             this.geometry = new THREE.BufferGeometry();
             this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
-            this.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
-            var material = new THREE.MeshBasicMaterial({ vertexColors: true });
+            var material = new THREE.MeshBasicMaterial({ color: this.color });
             this.mesh = new THREE.Mesh(this.geometry, material);
             scene.add(this.mesh);
+
+            // Add vector to array
+            function addVector(arr, vector) {
+                arr.push(vector.x);
+                arr.push(vector.y);
+                arr.push(vector.z);
+            }
 
         }
 
         // create an octagon object which passes in 9 vertices and 9 colors for each vertex
-        function Octagon(vertices, colors) {
+        function Octagon(vertices, color) {
 
             this.vertices = vertices;
-            this.colors = colors;
+
+            this.color = color;
+
 
             // create 8 triangles to form an octagon
             this.triangles = [
-                new Triangle(this.vertices[0], this.colors, this.vertices[1], this.colors, this.vertices[2], this.colors),
-                new Triangle(this.vertices[0], this.colors, this.vertices[2], this.colors, this.vertices[3], this.colors),
-                new Triangle(this.vertices[0], this.colors, this.vertices[3], this.colors, this.vertices[4], this.colors),
-                new Triangle(this.vertices[0], this.colors, this.vertices[4], this.colors, this.vertices[5], this.colors),
-                new Triangle(this.vertices[0], this.colors, this.vertices[5], this.colors, this.vertices[6], this.colors),
-                new Triangle(this.vertices[0], this.colors, this.vertices[6], this.colors, this.vertices[7], this.colors),
-                new Triangle(this.vertices[0], this.colors, this.vertices[7], this.colors, this.vertices[8], this.colors),
-                new Triangle(this.vertices[0], this.colors, this.vertices[8], this.colors, this.vertices[1], this.colors)
+                new Triangle(this.vertices[0], this.vertices[1], this.vertices[2], this.color),
+                new Triangle(this.vertices[0], this.vertices[2], this.vertices[3], this.color),
+                new Triangle(this.vertices[0], this.vertices[3], this.vertices[4], this.color),
+                new Triangle(this.vertices[0], this.vertices[4], this.vertices[5], this.color),
+                new Triangle(this.vertices[0], this.vertices[5], this.vertices[6], this.color),
+                new Triangle(this.vertices[0], this.vertices[6], this.vertices[7], this.color),
+                new Triangle(this.vertices[0], this.vertices[7], this.vertices[8], this.color),
+                new Triangle(this.vertices[0], this.vertices[8], this.vertices[1], this.color)
             ];
+
         }
 
         // Creates a Puzzle Piece
         function puzzlePiece(v1, v2, v3, col) {
-            this.vertices = [...v1, ...v2, ...v3];
-            this.color = [...col, ...col, ...col];
+            this.vertices = [];
+            addVector(this.vertices, v1);
+            addVector(this.vertices, v2);
+            addVector(this.vertices, v3);
+            this.color = col;
 
             // use bufferGeometry to pass in the vertices and colors and create the triangles
             var geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.color), 3));
-            var material = new THREE.MeshBasicMaterial({ vertexColors: true });
+            var material = new THREE.MeshBasicMaterial({ color: this.color });
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
 
@@ -85,8 +103,9 @@
             this.boundingBox = new THREE.Box3();
             this.boundingBox.setFromObject(this.mesh);
 
-            // Vertex that will act as the origin of the puzzle piece (bottom most vertex)
-            this.origin = [this.boundingBox.min.x, this.boundingBox.min.y, this.boundingBox.min.z];
+
+            // Vertex that will act as the origin of the puzzle piece (bottom must vertex)
+            this.origin = new THREE.Vector3(this.boundingBox.min.x, this.boundingBox.min.y, this.boundingBox.min.z)
 
             // Width and height of the piece
             this.width = this.boundingBox.max.x - this.boundingBox.min.x;
@@ -95,16 +114,24 @@
             // Function to move puzzle piece
             this.move = function (newVertex) {
                 // Moves it along the X axis
-                this.mesh.translateX(newVertex[0] - this.origin[0]);
+                this.mesh.translateX(newVertex.x - this.origin.x);
 
                 // Moves it along the Y axis
-                this.mesh.translateY(newVertex[1] - this.origin[1]);
+                this.mesh.translateY(newVertex.y - this.origin.y);
 
                 // Updates the origin vertex
                 this.origin = newVertex;
 
                 // Updates bounding box
                 this.boundingBox.setFromObject(this.mesh);
+            }
+
+
+            // Add vector to array
+            function addVector(arr, vector) {
+                arr.push(vector.x);
+                arr.push(vector.y);
+                arr.push(vector.z);
             }
 
             // Adds puzzle piece into array of objects that can be moved
@@ -119,10 +146,17 @@
             // Height of the Puzzle Board
             this.height = (cellHeight * verticalCells) + (cellHeight * (verticalCells * .15));
 
-            this.vertices = [
-                ...v1, v1[0] + this.width, v1[1], v1[2], v1[0] + this.width, v1[1] + this.height, v1[2], // Bottom right triangle
-                ...v1, v1[0] + this.width, v1[1] + this.height, v1[2], v1[0], v1[1] + this.height, v1[2] // Top left triangle
-            ];
+            // Adding the vectors to the array
+            this.vertices = [];
+            addVector(this.vertices, v1);
+            this.vertices.push(
+                v1.x + this.width, v1.y, v1.z, v1.x + this.width, v1.y + this.height, v1.z // Bottom right triangle
+            );
+            addVector(this.vertices, v1);
+            this.vertices.push(
+                v1.x + this.width, v1.y + this.height, v1.z, v1.x, v1.y + this.height, v1.z // Top left triangle
+            );
+
             this.color = col;
 
             // Amount of cells horizontally
@@ -143,8 +177,10 @@
             // Array to check if anchor point has been occupied
             this.occupied = [];
 
-            // Vertex to act as the template for the anchor points
-            this.template = [v1[0] + (this.horGap * .1), v1[1] + (this.verGap * .1)];
+
+            // Vertex to act as the template for the ancher points
+            this.template = new THREE.Vector2(v1.x + (this.horGap * .1), v1.y + (this.verGap * .1));
+
             // Loop will iterate vertically (act as the Y)
             for (var y = 0; y < this.verCells; y++) {
 
@@ -152,7 +188,7 @@
                 for (var x = 0; x < this.horCells; x++) {
 
                     // Adds an anchor point and adds false
-                    this.points.push([this.template[0] + (x * this.horGap), this.template[1] + (y * this.verGap), 0])
+                    this.points.push(new THREE.Vector3(this.template.x + (x * this.horGap), this.template.y + (y * this.verGap), 0));
                     this.occupied.push(false);
                 }
             }
@@ -162,25 +198,34 @@
             var material = new THREE.MeshBasicMaterial({ color: this.color });
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
+
+
+            // Add vector to array
+            function addVector(arr, vector) {
+                arr.push(vector.x);
+                arr.push(vector.y);
+                arr.push(vector.z);
+            }
         }
 
         /** Creates the puzzle pieces. */
         function MakePuzzle(vertices, colors) {
             this.vertices = vertices;
-            this.colors = colors;
-            // create 8 triangles to form an octagon
+            this.color = color;
+          
             this.pieces = [
-                new puzzlePiece(this.vertices[0], this.vertices[1], this.vertices[4], this.colors), // t1
-                new puzzlePiece(this.vertices[0], this.vertices[4], this.vertices[5], this.colors), // t2
-                new puzzlePiece(this.vertices[1], this.vertices[2], this.vertices[9], this.colors), // t3
-                new puzzlePiece(this.vertices[9], this.vertices[2], this.vertices[3], this.colors), // t4
-                new puzzlePiece(this.vertices[9], this.vertices[3], this.vertices[10], this.colors), // t5
-                new puzzlePiece(this.vertices[10], this.vertices[3], this.vertices[4], this.colors), // t6
-                new puzzlePiece(this.vertices[6], this.vertices[11], this.vertices[5], this.colors), // t7
-                new puzzlePiece(this.vertices[7], this.vertices[8], this.vertices[6], this.colors), // t8 
-                new puzzlePiece(this.vertices[8], this.vertices[11], this.vertices[6], this.colors), // 9
-                new puzzlePiece(this.vertices[0], this.vertices[8], this.vertices[7], this.colors) // 10
+                new puzzlePiece(this.vertices[0], this.vertices[1], this.vertices[4], this.color), // t1
+                new puzzlePiece(this.vertices[0], this.vertices[4], this.vertices[5], this.color), // t2
+                new puzzlePiece(this.vertices[1], this.vertices[2], this.vertices[9], this.color), // t3
+                new puzzlePiece(this.vertices[9], this.vertices[2], this.vertices[3], this.color), // t4
+                new puzzlePiece(this.vertices[9], this.vertices[3], this.vertices[10], this.color), // t5
+                new puzzlePiece(this.vertices[10], this.vertices[3], this.vertices[4], this.color), // t6
+                new puzzlePiece(this.vertices[6], this.vertices[11], this.vertices[5], this.color), // t7
+                new puzzlePiece(this.vertices[7], this.vertices[8], this.vertices[6], this.color), // t8 
+                new puzzlePiece(this.vertices[8], this.vertices[11], this.vertices[6], this.color), // 9
+                new puzzlePiece(this.vertices[0], this.vertices[8], this.vertices[7], this.color) // 10
             ];
+
         }
 
         // Moves the puzzle pieces from where they're created to the puzzle board
@@ -203,6 +248,7 @@
         }
 
         var correctCount = 0;
+
         var numOfPieces;
 
         /** A function to handle snapping a piece. */
@@ -220,6 +266,7 @@
 
                     // Lock the piece in its correct spots into place / disable dragging by creating a new "fake" mesh 
                     moveableObjects[i] = new THREE.Mesh();
+                  
                 }
                 // Check if a new piece is actually in its correct location after the snapping function above
                 if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
@@ -245,41 +292,44 @@
 
         // List of vertices to be defined for the main octagon board
         const mainBoardVertices = [
-            [224.51, 224.51, 0], //v1
-            [124.51, -25.49, 0], // v2
-            [324.51, -25.49, 0], // v3
-            [474.51, 124.51, 0], // v4
-            [474.51, 324.51, 0], // v5
-            [324.51, 474.51, 0], //v6
-            [124.51, 474.51, 0], // v7
-            [-25.49, 324.51, 0], // v8
-            [-25.49, 124.51, 0] // v9
+            new THREE.Vector3(224.51, 224.51, 0), //v1
+            new THREE.Vector3(124.51, -25.49, 0), // v2
+            new THREE.Vector3(324.51, -25.49, 0), // v3
+            new THREE.Vector3(474.51, 124.51, 0), // v4
+            new THREE.Vector3(474.51, 324.51, 0), // v5
+            new THREE.Vector3(324.51, 474.51, 0), //v6
+            new THREE.Vector3(124.51, 474.51, 0), // v7
+            new THREE.Vector3(-25.49, 324.51, 0), // v8
+            new THREE.Vector3(-25.49, 124.51, 0) // v9
         ];
-        const mainBoardColors = [0.2, 0.3, 0.1];
+
+        const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
+
 
         const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
         var pieceVertices = [
-            [131.51, 0, 0], // v0
-            [317.5, 0, 0], // v1
-            [449.02, 130.52, 0], // v2
-            [449.02, 318.5, 0], // v3
-            [317.51, 449.02, 0], // v4
-            [131.51, 449.02, 0], // v5
-            [0, 318.5, 0], // v6
-            [0, 130.56, 0], // v7
-            [131.51, 130.52, 0], // v8
-            [317.5, 130.52, 0], // v9
-            [317.5, 318.5, 0], // v10
-            [131.51, 318.5, 0] // v11
+            new THREE.Vector3(131.51, 0, 10), // v0
+            new THREE.Vector3(317.5, 0, 10), // v1
+            new THREE.Vector3(449.02, 130.52, 10), // v2
+            new THREE.Vector3(449.02, 318.5, 10), // v3
+            new THREE.Vector3(317.51, 449.02, 10), // v4
+            new THREE.Vector3(131.51, 449.02, 10), // v5
+            new THREE.Vector3(0, 318.5, 10), // v6
+            new THREE.Vector3(0, 130.56, 10), // v7
+            new THREE.Vector3(131.51, 130.52, 10), // v8
+            new THREE.Vector3(317.5, 130.52, 10), // v9
+            new THREE.Vector3(317.5, 318.5, 10), // v10
+            new THREE.Vector3(131.51, 318.5, 10) // v11
         ];
 
         // All of the pieces will be the same color
-        const pieceColors = [0.9, 0.2, 0.2];
+        const pieceColor = new THREE.Color(0.9, 0.2, 0.2);
 
-        var puzzle = new MakePuzzle(pieceVertices, pieceColors);
+        var puzzle = new MakePuzzle(pieceVertices, pieceColor);
         numOfPieces = puzzle.pieces.length;
+
 
         // Max width and height of all the pieces
         var maxWidth = 0;
@@ -298,7 +348,7 @@
 
         { // var piecesBoard
             var piecesBoard = new puzzleBoard(
-                [650, -675, -10], 0x99ffff, maxWidth, maxHeight,
+                new THREE.Vector3(650, -675, -10), new THREE.Color(0, 1, 1), maxWidth, maxHeight,
                 3, 4
             );
         }
@@ -310,6 +360,7 @@
 
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
         dControls.addEventListener('dragstart', function (event) {
+
             playSound('./assets/sounds/mouse_click_final.mp3');
         });
 
