@@ -4,4 +4,4 @@ node_modules
 bundle.js
 package.json
 package-lock.json
-.DS_Store
+**/.DS_Store

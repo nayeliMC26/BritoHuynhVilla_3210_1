@@ -66,7 +66,9 @@
         function Octagon(vertices, color) {
 
             this.vertices = vertices;
+
             this.color = color;
+
 
             // create 8 triangles to form an octagon
             this.triangles = [
@@ -101,6 +103,7 @@
             this.boundingBox = new THREE.Box3();
             this.boundingBox.setFromObject(this.mesh);
 
+
             // Vertex that will act as the origin of the puzzle piece (bottom must vertex)
             this.origin = new THREE.Vector3(this.boundingBox.min.x, this.boundingBox.min.y, this.boundingBox.min.z)
 
@@ -122,6 +125,7 @@
                 // Updates bounding box
                 this.boundingBox.setFromObject(this.mesh);
             }
+
 
             // Add vector to array
             function addVector(arr, vector) {
@@ -173,6 +177,7 @@
             // Array to check if anchor point has been occupied
             this.occupied = [];
 
+
             // Vertex to act as the template for the ancher points
             this.template = new THREE.Vector2(v1.x + (this.horGap * .1), v1.y + (this.verGap * .1));
 
@@ -194,6 +199,7 @@
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
 
+
             // Add vector to array
             function addVector(arr, vector) {
                 arr.push(vector.x);
@@ -206,7 +212,7 @@
         function MakePuzzle(vertices, colors) {
             this.vertices = vertices;
             this.color = color;
-
+          
             this.pieces = [
                 new puzzlePiece(this.vertices[0], this.vertices[1], this.vertices[4], this.color), // t1
                 new puzzlePiece(this.vertices[0], this.vertices[4], this.vertices[5], this.color), // t2
@@ -243,6 +249,7 @@
 
         var correctCount = 0;
 
+        var numOfPieces;
 
         /** A function to handle snapping a piece. */
         function snapTo(triangles, targetVector, threshold) {
@@ -259,13 +266,21 @@
 
                     // Lock the piece in its correct spots into place / disable dragging by creating a new "fake" mesh 
                     moveableObjects[i] = new THREE.Mesh();
+                  
                 }
                 // Check if a new piece is actually in its correct location after the snapping function above
                 if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
                     correctCount++;
-                    // Play the "correct" sound effect
-                    playSound('./assets/sounds/correct.mp3');
-                    break; // terminate from the for loop
+                    if (correctCount == numOfPieces) {
+                        // Play the "winning" sound
+                        playSound('./assets/sounds/correct.mp3');
+                        console.log("You Win");
+                        break;
+                    } else {
+                        // Play the "correct" sound effect
+                        playSound('./assets/sounds/correct.mp3');
+                        break;
+                    }
                 }
 
             }
@@ -290,6 +305,7 @@
 
         const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
 
+
         const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
@@ -312,6 +328,8 @@
         const pieceColor = new THREE.Color(0.9, 0.2, 0.2);
 
         var puzzle = new MakePuzzle(pieceVertices, pieceColor);
+        numOfPieces = puzzle.pieces.length;
+
 
         // Max width and height of all the pieces
         var maxWidth = 0;
@@ -342,7 +360,8 @@
 
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
         dControls.addEventListener('dragstart', function (event) {
-            playSound('./assets/sounds/mouse click final.mp3');
+
+            playSound('./assets/sounds/mouse_click_final.mp3');
         });
 
         // eventListener which detects when an object is no longer being dragged
