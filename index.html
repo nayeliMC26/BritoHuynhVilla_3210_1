@@ -5,7 +5,6 @@
     <title>2D Puzzle</title>
 </head>
 
-
 <body>
     <canvas id="myCanvas" width="1200" height="900"></canvas>
 
@@ -98,7 +97,7 @@
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
 
-            // Bouding box of the piece
+            // Bounding box of the piece
             this.boundingBox = new THREE.Box3();
             this.boundingBox.setFromObject(this.mesh);
 
@@ -109,7 +108,7 @@
             this.width = this.boundingBox.max.x - this.boundingBox.min.x;
             this.height = this.boundingBox.max.y - this.boundingBox.min.y;
 
-            // Funtion to move puzzle piece
+            // Function to move puzzle piece
             this.move = function (newVertex) {
                 // Moves it along the X axis
                 this.mesh.translateX(newVertex.x - this.origin.x);
@@ -131,7 +130,7 @@
                 arr.push(vector.z);
             }
 
-            // Adds puzzle piece into arra of objects that can be moved
+            // Adds puzzle piece into array of objects that can be moved
             moveableObjects.push(this.mesh);
         }
 
@@ -180,7 +179,7 @@
             // Loop will iterate vertically (act as the Y)
             for (var y = 0; y < this.verCells; y++) {
 
-                // Loop will iterate horizonatlly (act as the X)
+                // Loop will iterate horizontally (act as the X)
                 for (var x = 0; x < this.horCells; x++) {
 
                     // Adds an anchor point and adds false
@@ -203,39 +202,8 @@
             }
         }
 
-        /** Create points within the octagon's range. Used to help plot the vertices of the puzzle pieces. */
-        function VertexPoint() {
-            var points = [];
-
-            points.push(0, 265, 0); //v1
-            points.push(-125, 15, 0); //v2
-            points.push(125, 15, 0); //v3
-            points.push(250, 140, 0); //v4
-            points.push(250, 390, 0); //v5
-            points.push(125, 515, 0); //v6
-
-            points.push(60, 515, 0); //v6Out
-            points.push(60, 387, 0); //v6In
-            points.push(-60, 515, 0); //v7Out
-            points.push(-60, 387, 0); //v7In
-
-
-            points.push(-125, 515, 0); //v7
-            points.push(-250, 390, 0); //v8
-            points.push(-250, 140, 0); //v9
-
-            // Render the points
-            this.render = function () {
-                var geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-                // Make the points invisible after ensuring the snap function works
-                var material = new THREE.PointsMaterial({ size: 10, sizeAttenuation: false, color: 0xab2323 }); // Red color for now
-                var point = new THREE.Points(geometry, material);
-                scene.add(point);
-            }
-        }
-
-        function MakePuzzle(vertices, color) {
+        /** Creates the puzzle pieces. */
+        function MakePuzzle(vertices, colors) {
             this.vertices = vertices;
             this.color = color;
 
@@ -273,33 +241,36 @@
 
         }
 
-        // function to handle snapping  
+        var correctCount = 0;
+
+
+        /** A function to handle snapping a piece. */
         function snapTo(triangles, targetVector, threshold) {
+            var snapCount = 0;
+            var hasBeenSnapped = false;
             // for every triangle in the array of triangles 
             for (var i = 0; i < triangles.length; i++) {
                 // if the position of the current triangle's distance is less than or equal to the threshold
                 if (triangles[i].mesh.position.distanceTo(targetVector) <= threshold) {
-                    triangles[i].mesh.position.copy(targetVector)
+                    // A piece has been placed around its correct location. Snap it into place.
+                    triangles[i].mesh.position.copy(targetVector);
+                    snapCount++;
+                    hasBeenSnapped = true;
+
+                    // Lock the piece in its correct spots into place / disable dragging by creating a new "fake" mesh 
+                    moveableObjects[i] = new THREE.Mesh();
                 }
+                // Check if a new piece is actually in its correct location after the snapping function above
+                if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
+                    correctCount++;
+                    // Play the "correct" sound effect
+                    playSound('./assets/sounds/correct.mp3');
+                    break; // terminate from the for loop
+                }
+
             }
         }
 
-        function watermelonSeeds(triangles) {
-            // use the vertices of the triangle + scalar create fractal like pattern
-            var points = [];
-            points.push(174.51, 329.51, 5);
-            points.push(274.51, 329.51, 5);
-            points.push(224.51, 269.51, 5);
-            points.push(224.51, 394.51, 5);
-            points.push(224.51, 324.51, 5);
-            points.push(149.51, 394.51, 5);
-            points.push(299.51, 394.51, 5);
-            var geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-            var material = new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, color: 0x000000 }); // Red color for now
-            var point = new THREE.Points(geometry, material);
-            scene.add(point);
-        }
 
         // Array of moveable objects (mesh)
         var moveableObjects = [];
@@ -319,7 +290,7 @@
 
         const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
 
-        const octagon2 = new Octagon(mainBoardVertices, mainBoardColors);
+        const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
         var pieceVertices = [
@@ -342,9 +313,7 @@
 
         var puzzle = new MakePuzzle(pieceVertices, pieceColor);
 
-        var seeds = new watermelonSeeds(puzzle.triangles);
-
-        // Max width and height of all the piecex
+        // Max width and height of all the pieces
         var maxWidth = 0;
         var maxHeight = 0;
 
@@ -368,36 +337,39 @@
 
         relocate(puzzle.pieces, piecesBoard);
 
-        // pass in the array to the dragControls object
+        // pass in the array of moveableObjects into the dragControls
         var dControls = new DragControls(moveableObjects, camera, renderer.domElement);
 
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
         dControls.addEventListener('dragstart', function (event) {
-            var sound = new THREE.Audio(listener);
-            var audioLoader = new THREE.AudioLoader();
-            audioLoader.load('http://localhost:5173/assets/sounds/mouse click final.mp3', function (buffer) {
-                sound.setBuffer(buffer);
-                sound.setLoop(false);
-                sound.setVolume(0.5);
-                sound.play();
-            })
-
-        })
+            playSound('./assets/sounds/mouse click final.mp3');
+        });
 
         // eventListener which detects when an object is no longer being dragged
         dControls.addEventListener('dragend', function (event) {
             // snapTo function which occurs when an object is let go of in the range of intersection
             var targetVector = new THREE.Vector3(0, 0, 0);
-            snapTo(puzzle.pieces, targetVector, 40)
-        })
+            snapTo(puzzle.pieces, targetVector, 40);
+        });
 
-        // Adjusting camera aspect to account for window rezise
+        // Adjusting camera aspect to account for window resize
         window.addEventListener('resize', function (event) {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+        /** A function to play a given sound. ("Above and Beyond") */
+        function playSound(audioFile) {
+            const sound = new THREE.Audio(listener);
+            const audioLoader = new THREE.AudioLoader();
+            audioLoader.load(audioFile, function (buffer) {
+                sound.setBuffer(buffer);
+                sound.setLoop(false);
+                sound.setVolume(0.5);
+                sound.play();
+            });
+        }
         // function to allow the scene to continuously update 
         function animate() {
             requestAnimationFrame(animate);
