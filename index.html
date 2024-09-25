@@ -175,6 +175,7 @@
             scene.add(this.mesh);
         }
 
+        /** Creates the puzzle pieces. */
         function MakePuzzle(vertices, colors) {
             this.vertices = vertices;
             this.colors = colors;
@@ -217,11 +218,12 @@
         }
 
         var correctCount = 0;
-        var hasBeenSnapped = false;
-        
-        // function to handle snapping  
+
+
+        /** A function to handle snapping a piece. */
         function snapTo(triangles, targetVector, threshold) {
             var snapCount = 0;
+            var hasBeenSnapped = false;
             // for every triangle in the array of triangles 
             for (var i = 0; i < triangles.length; i++) {
                 // if the position of the current triangle's distance is less than or equal to the threshold
@@ -238,18 +240,10 @@
                 if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
                     correctCount++;
                     // Play the "correct" sound effect
-                    var correctSound = new THREE.Audio(listener);
-                    var audioLoader2 = new THREE.AudioLoader();
-                    audioLoader2.load('./assets/sounds/correct.mp3', function (buffer) {
-                        correctSound.setBuffer(buffer);
-                        correctSound.setLoop(false);
-                        correctSound.setVolume(0.5);
-                        correctSound.play();
-                    });
-                    hasBeenSnapped = false; // Reset the check
+                    playSound('./assets/sounds/correct.mp3');
                     break; // terminate from the for loop
                 }
-                
+
             }
         }
 
@@ -287,7 +281,7 @@
         ];
         const mainBoardColors = [0.2, 0.3, 0.1];
 
-        const octagon2 = new Octagon(mainBoardVertices, mainBoardColors);
+        const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
         var pieceVertices = [
@@ -341,15 +335,7 @@
 
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
         dControls.addEventListener('dragstart', function (event) {
-            var sound = new THREE.Audio(listener);
-            var audioLoader = new THREE.AudioLoader();
-            audioLoader.load('http://localhost:5173/assets/sounds/mouse click final.mp3', function (buffer) {
-                sound.setBuffer(buffer);
-                sound.setLoop(false);
-                sound.setVolume(0.5);
-                sound.play();
-            });
-
+            playSound('./assets/sounds/mouse click final.mp3');
         });
 
         // eventListener which detects when an object is no longer being dragged
@@ -366,6 +352,17 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+        /** A function to play a given sound. ("Above and Beyond") */
+        function playSound(audioFile) {
+            const sound = new THREE.Audio(listener);
+            const audioLoader = new THREE.AudioLoader();
+            audioLoader.load(audioFile, function (buffer) {
+                sound.setBuffer(buffer);
+                sound.setLoop(false);
+                sound.setVolume(0.5);
+                sound.play();
+            });
+        }
         // function to allow the scene to continuously update 
         function animate() {
             requestAnimationFrame(animate);
