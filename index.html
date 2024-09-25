@@ -360,8 +360,11 @@
 
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
         dControls.addEventListener('dragstart', function (event) {
-
+            // Above and Beyond #1: Play sound upon dragging a piece
             playSound('./assets/sounds/mouse_click_final.mp3');
+            // Above and Beyond #2: Highlight the piece while moving by changing its color
+            event.object.material.color = new THREE.Color("red");
+
         });
 
         // eventListener which detects when an object is no longer being dragged
@@ -369,6 +372,8 @@
             // snapTo function which occurs when an object is let go of in the range of intersection
             var targetVector = new THREE.Vector3(0, 0, 0);
             snapTo(puzzle.pieces, targetVector, 40);
+            // Change the color of the piece back to its original color
+            event.object.material.color = pieceColor;
         });
 
         // Adjusting camera aspect to account for window resize
