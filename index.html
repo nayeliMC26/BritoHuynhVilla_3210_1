@@ -215,8 +215,10 @@
             }
 
         }
-        var correctCount = 1;
+
+        var correctCount = 0;
         var hasBeenSnapped = false;
+        
         // function to handle snapping  
         function snapTo(triangles, targetVector, threshold) {
             var snapCount = 0;
@@ -228,16 +230,13 @@
                     triangles[i].mesh.position.copy(targetVector);
                     snapCount++;
                     hasBeenSnapped = true;
+
+                    // Lock the piece in its correct spots into place / disable dragging by creating a new "fake" mesh 
+                    moveableObjects[i] = new THREE.Mesh();
                 }
-                // Check if a piece is actually in its correct location after the snapping function above
-                if ((correctCount == snapCount) && hasBeenSnapped) {
+                // Check if a new piece is actually in its correct location after the snapping function above
+                if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
                     correctCount++;
-                    snapCount = correctCount;
-                    // Lock the piece into place by disabling its dragging capabilities
-
-                    // TODO need a way to deactivate DragControls for only that piece
-                    // dControls.deactivate();
-
                     // Play the "correct" sound effect
                     var correctSound = new THREE.Audio(listener);
                     var audioLoader2 = new THREE.AudioLoader();
@@ -247,8 +246,8 @@
                         correctSound.setVolume(0.5);
                         correctSound.play();
                     });
-
                     hasBeenSnapped = false; // Reset the check
+                    break; // terminate from the for loop
                 }
                 
             }
