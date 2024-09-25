@@ -32,6 +32,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // For sound
         var listener = new THREE.AudioListener();
         camera.add(listener);
 
@@ -247,9 +248,8 @@
 
         }
 
-        var correctCount = 0;
-
-        var numOfPieces;
+        var correctCount = 0; // Used to determine how many pieces have been placed correctly
+        var numOfPieces; // The total number of pieces generated
 
         /** A function to handle snapping a piece. */
         function snapTo(triangles, targetVector, threshold) {
@@ -274,7 +274,6 @@
                     if (correctCount == numOfPieces) {
                         // Play the "winning" sound
                         playSound('./assets/sounds/victory.mp3');
-                        console.log("You Win");
                         break;
                     } else {
                         // Play the "correct" sound effect
@@ -303,9 +302,10 @@
             new THREE.Vector3(-25.49, 124.51, 0) // v9
         ];
 
+        // The main octagon board's color
         const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
 
-
+        // The octagon play area
         const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
