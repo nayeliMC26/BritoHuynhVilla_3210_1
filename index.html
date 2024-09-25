@@ -202,6 +202,7 @@
 
             // Add vector to array
             function addVector(arr, vector) {
+                console.log(vector)
                 arr.push(vector.x);
                 arr.push(vector.y);
                 arr.push(vector.z);
@@ -210,22 +211,45 @@
 
         /** Creates the puzzle pieces. */
         function MakePuzzle(vertices, color) {
-            this.vertices = vertices;
+            this.v = vertices;
             this.color = color;
-          
-            this.pieces = [
-                new puzzlePiece(this.vertices[0], this.vertices[1], this.vertices[4], this.color), // t1
-                new puzzlePiece(this.vertices[0], this.vertices[4], this.vertices[5], this.color), // t2
-                new puzzlePiece(this.vertices[1], this.vertices[2], this.vertices[9], this.color), // t3
-                new puzzlePiece(this.vertices[9], this.vertices[2], this.vertices[3], this.color), // t4
-                new puzzlePiece(this.vertices[9], this.vertices[3], this.vertices[10], this.color), // t5
-                new puzzlePiece(this.vertices[10], this.vertices[3], this.vertices[4], this.color), // t6
-                new puzzlePiece(this.vertices[6], this.vertices[11], this.vertices[5], this.color), // t7
-                new puzzlePiece(this.vertices[7], this.vertices[8], this.vertices[6], this.color), // t8 
-                new puzzlePiece(this.vertices[8], this.vertices[11], this.vertices[6], this.color), // 9
-                new puzzlePiece(this.vertices[0], this.vertices[8], this.vertices[7], this.color) // 10
-            ];
 
+            for (var i = 1; i < 9; i++) {
+                if (i === 8) {
+                    this.v.push(new THREE.Vector3((this.v[0].x + this.v[i].x) / 2, (this.v[0].y + this.v[i].y) / 2, (this.v[0].z + this.v[i].z) / 2));
+                    this.v.push(new THREE.Vector3((this.v[i].x + this.v[1].x) / 2, (this.v[i].y + this.v[1].y) / 2, (this.v[i].z + this.v[1].z) / 2));
+                } else {
+                    this.v.push(new THREE.Vector3((this.v[0].x + this.v[i].x) / 2, (this.v[0].y + this.v[i].y) / 2, (this.v[0].z + this.v[i].z) / 2));
+                    this.v.push(new THREE.Vector3((this.v[i].x + this.v[i + 1].x) / 2, (this.v[i].y + this.v[i + 1].y) / 2, (this.v[i].z + this.v[i + 1].z) / 2));
+                }
+            }
+            console.log(this.v)
+
+            this.pieces = [];
+
+            var k = 10;
+            for (var i = 1; i < this.v.length- 1; i++) {
+                if (i === 8) {
+                    console.log("8")
+                    this.pieces.push(new puzzlePiece(this.v[i], this.v[k], this.v[k - 1], this.color));
+                    this.pieces.push(new puzzlePiece(this.v[k], this.v[9], this.v[k - 1], this.color));
+                    this.pieces.push(new puzzlePiece(this.v[k], this.v[1], this.v[9], this.color));
+                } else if (i === 23) {
+                    this.pieces.push(new puzzlePiece(this.v[i], this.v[9], this.v[0], this.color));
+                } else if (i > 8) {
+                    console.log("inner")
+                    console.log("i: ", i)
+                    this.pieces.push(new puzzlePiece(this.v[i], this.v[i + 2], this.v[0], this.color));
+                    i++;
+                } else {
+                    console.log("outside")
+                    this.pieces.push(new puzzlePiece(this.v[i], this.v[k], this.v[k - 1], this.color));
+                    this.pieces.push(new puzzlePiece(this.v[k], this.v[k + 1], this.v[k - 1], this.color));
+                    this.pieces.push(new puzzlePiece(this.v[k], this.v[i + 1], this.v[k + 1], this.color));
+                    k += 2;
+                }
+            }
+            
         }
 
         // Moves the puzzle pieces from where they're created to the puzzle board
@@ -266,7 +290,7 @@
 
                     // Lock the piece in its correct spots into place / disable dragging by creating a new "fake" mesh 
                     moveableObjects[i] = new THREE.Mesh();
-                  
+
                 }
                 // Check if a new piece is actually in its correct location after the snapping function above
                 if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
@@ -305,23 +329,19 @@
 
         const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
 
-
         const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
         var pieceVertices = [
-            new THREE.Vector3(131.51, 0, 10), // v0
-            new THREE.Vector3(317.5, 0, 10), // v1
-            new THREE.Vector3(449.02, 130.52, 10), // v2
-            new THREE.Vector3(449.02, 318.5, 10), // v3
-            new THREE.Vector3(317.51, 449.02, 10), // v4
-            new THREE.Vector3(131.51, 449.02, 10), // v5
-            new THREE.Vector3(0, 318.5, 10), // v6
-            new THREE.Vector3(0, 130.56, 10), // v7
-            new THREE.Vector3(131.51, 130.52, 10), // v8
-            new THREE.Vector3(317.5, 130.52, 10), // v9
-            new THREE.Vector3(317.5, 318.5, 10), // v10
-            new THREE.Vector3(131.51, 318.5, 10) // v11
+            new THREE.Vector3(224.51, 224.51, 0), //v0
+            new THREE.Vector3(131.51, 0, 10), // v1
+            new THREE.Vector3(317.5, 0, 10), // v2
+            new THREE.Vector3(449.02, 130.52, 10), // v3
+            new THREE.Vector3(449.02, 318.5, 10), // v4
+            new THREE.Vector3(317.51, 449.02, 10), // v5
+            new THREE.Vector3(131.51, 449.02, 10), // v6
+            new THREE.Vector3(0, 318.5, 10), // v7
+            new THREE.Vector3(0, 130.56, 10), // v8
         ];
 
         // All of the pieces will be the same color
@@ -329,7 +349,6 @@
 
         var puzzle = new MakePuzzle(pieceVertices, pieceColor);
         numOfPieces = puzzle.pieces.length;
-
 
         // Max width and height of all the pieces
         var maxWidth = 0;
@@ -353,7 +372,7 @@
             );
         }
 
-        relocate(puzzle.pieces, piecesBoard);
+        // relocate(puzzle.pieces, piecesBoard);
 
         // pass in the array of moveableObjects into the dragControls
         var dControls = new DragControls(moveableObjects, camera, renderer.domElement);
