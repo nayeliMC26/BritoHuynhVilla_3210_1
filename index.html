@@ -216,14 +216,40 @@
 
         }
 
+        var correctCount = 0;
+        var hasBeenSnapped = false;
+        
         // function to handle snapping  
         function snapTo(triangles, targetVector, threshold) {
+            var snapCount = 0;
             // for every triangle in the array of triangles 
             for (var i = 0; i < triangles.length; i++) {
                 // if the position of the current triangle's distance is less than or equal to the threshold
                 if (triangles[i].mesh.position.distanceTo(targetVector) <= threshold) {
-                    triangles[i].mesh.position.copy(targetVector)
+                    // A piece has been placed around its correct location. Snap it into place.
+                    triangles[i].mesh.position.copy(targetVector);
+                    snapCount++;
+                    hasBeenSnapped = true;
+
+                    // Lock the piece in its correct spots into place / disable dragging by creating a new "fake" mesh 
+                    moveableObjects[i] = new THREE.Mesh();
                 }
+                // Check if a new piece is actually in its correct location after the snapping function above
+                if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
+                    correctCount++;
+                    // Play the "correct" sound effect
+                    var correctSound = new THREE.Audio(listener);
+                    var audioLoader2 = new THREE.AudioLoader();
+                    audioLoader2.load('./assets/sounds/correct.mp3', function (buffer) {
+                        correctSound.setBuffer(buffer);
+                        correctSound.setLoop(false);
+                        correctSound.setVolume(0.5);
+                        correctSound.play();
+                    });
+                    hasBeenSnapped = false; // Reset the check
+                    break; // terminate from the for loop
+                }
+                
             }
         }
 
@@ -286,7 +312,7 @@
 
         var seeds = new watermelonSeeds(puzzle.triangles);
 
-        // Max width and height of all the piecex
+        // Max width and height of all the pieces
         var maxWidth = 0;
         var maxHeight = 0;
 
@@ -306,7 +332,7 @@
                 [650, -675, -10], 0x99ffff, maxWidth, maxHeight,
                 3, 4
             );
-        } 
+        }
 
         relocate(puzzle.pieces, piecesBoard);
 
@@ -322,16 +348,16 @@
                 sound.setLoop(false);
                 sound.setVolume(0.5);
                 sound.play();
-            })
+            });
 
-        })
+        });
 
         // eventListener which detects when an object is no longer being dragged
         dControls.addEventListener('dragend', function (event) {
             // snapTo function which occurs when an object is let go of in the range of intersection
             var targetVector = new THREE.Vector3(0, 0, 0);
-            snapTo(puzzle.pieces, targetVector, 40)
-        })
+            snapTo(puzzle.pieces, targetVector, 40);
+        });
 
         // Adjusting camera aspect to account for window resize
         window.addEventListener('resize', function (event) {
