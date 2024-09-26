@@ -39,6 +39,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // For sound
         var listener = new THREE.AudioListener();
         camera.add(listener);
 
@@ -418,7 +419,6 @@
                     if (correctCount == numOfPieces) {
                         // Play the "winning" sound
                         playSound('./assets/sounds/victory.mp3');
-                        console.log("You Win");
                         break;
                     } else {
                         // Play the "correct" sound effect
@@ -432,9 +432,8 @@
 
         // var geometryUtils = new THREE.BufferGeometryUtils().mergeGeometries();
 
-        var correctCount = 0;
-
-        var numOfPieces;
+        var correctCount = 0; // Used to determine how many pieces have been placed correctly
+        var numOfPieces; // The total number of pieces generated
 
         // Array of moveable objects (mesh)
         var moveableObjects = [];
@@ -452,8 +451,10 @@
             new THREE.Vector3(0, 150, 0), //v8
         ];
 
+        // The main octagon board's color
         const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
 
+        // The main play area
         const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
@@ -505,10 +506,17 @@
         // pass in the array of moveableObjects into the dragControls
         var dControls = new DragControls(moveableObjects, camera, renderer.domElement);
 
+        var originalPieceColor;
+
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
         dControls.addEventListener('dragstart', function (event) {
-
+            // Above and Beyond #1: Play sound upon dragging a piece
             playSound('./assets/sounds/mouse_click_final.mp3');
+            // Above and Beyond #2: Highlight the piece while moving by changing its color
+            // Store the original pieces' color
+            originalPieceColor = event.object.material.color;
+            event.object.material.color = new THREE.Color("red");
+
         });
 
         // eventListener which detects when an object is no longer being dragged
@@ -516,6 +524,8 @@
             // snapTo function which occurs when an object is let go of in the range of intersection
             var targetVector = new THREE.Vector3(0, 0, 0);
             snapTo(puzzle.pieces, targetVector, 40);
+            // Change the color of the piece back to its original color
+            event.object.material.color = originalPieceColor;
         });
 
         // Adjusting camera aspect to account for window resize
