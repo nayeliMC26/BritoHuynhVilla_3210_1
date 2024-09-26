@@ -12,7 +12,7 @@
 </head>
 
 <body>
-    <canvas id="myCanvas" width="1200" height="900"></canvas>
+    <canvas id="myCanvas" width="500" height="500"></canvas>
 
     <script type="module">
         import * as THREE from 'three';
@@ -24,10 +24,10 @@
 
         // set up the camera 
         var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 5000);
-        camera.position.x = 600;
-        camera.position.y = 275;
-        camera.position.z = 4000;
-        camera.lookAt(new THREE.Vector3(600, 275, 0));
+        camera.position.x = 250;
+        camera.position.y = 250;
+        camera.position.z = 1500;
+        camera.lookAt(new THREE.Vector3(250, 250, 0));
         scene.add(camera);
 
         // create renderer 
@@ -70,8 +70,10 @@
         function Octagon(vertices, color) {
 
             this.vertices = vertices;
-
             this.color = color;
+            this.geometries = [];
+
+
 
 
             // create 8 triangles to form an octagon
@@ -85,6 +87,26 @@
                 new Triangle(this.vertices[0], this.vertices[7], this.vertices[8], this.color),
                 new Triangle(this.vertices[0], this.vertices[8], this.vertices[1], this.color)
             ];
+            this.triangles.forEach(triangle => {
+                this.geometries.push(triangle.geometry);
+            });
+            var geometry = BufferGeometryUtils.mergeGeometries(this.geometries);
+            var material = new THREE.MeshBasicMaterial({ color: this.color })
+
+            this.mesh = new THREE.Mesh(geometry, material)
+            scene.add(this.mesh)
+
+            this.boundingBox = new THREE.Box3();
+
+            this.boundingBox.setFromObject(this.mesh);
+
+            var helper = new THREE.Box3Helper(this.boundingBox, 0x000000)
+            console.log(this.boundingBox);
+            //scene.add(helper);
+
+
+
+
 
         }
 
@@ -98,10 +120,10 @@
             this.boundingBox.setFromObject(this.mesh);
 
             var helper = new THREE.Box3Helper(this.boundingBox, 0x000000);
-            scene.add(helper);
+            //scene.add(helper);
 
 
-            // Vertex that will act as the origin of the puzzle piece (bottom must vertex)
+            // Vertex that will act as the origin of the puzzle piece (bottom most vertex)
             this.origin = new THREE.Vector3(this.boundingBox.min.x, this.boundingBox.min.y, this.boundingBox.min.z)
 
             // Width and height of the piece
@@ -183,7 +205,7 @@
             geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
             var material = new THREE.MeshBasicMaterial({ color: this.color });
             this.mesh = new THREE.Mesh(geometry, material);
-            //scene.add(this.mesh);
+            scene.add(this.mesh);
 
 
             // Add vector to array
@@ -193,26 +215,6 @@
                 arr.push(vector.z);
             }
         }
-        function Point(position) {
-            this.position = [];
-            addVector(position);
-
-            this.Render = function () {
-                var geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
-                var material = new THREE.PointsMaterial({ 'color': 0x000000 });
-                var points = new THREE.Points(geometry, material);
-                scene.add(points);
-            }
-            this.Render();
-
-            function addVector(arr, vector) {
-                arr.push(vector.x);
-                arr.push(vector.y);
-                arr.push(vector.z);
-            }
-        }
-
         /** Creates the puzzle pieces. */
         function MakePuzzle(vertices, color) {
             this.v = vertices;
@@ -220,6 +222,7 @@
             this.triangles = [];
             this.used = [];
             this.pieces = [];
+            this.boundingBox = new THREE.Box3();
 
 
             for (var i = 1; i < 9; i++) {
@@ -269,12 +272,11 @@
                         if (size > 2) { // If they reached the maximun size then exit
                             break;
                         }
-
-                        if (checkSide(this.triangles[currT], this.triangles[i])) { // Do they share a side
+                        if (checkSide(this.triangles[currT], this.triangles[i])) { // Check if the triangles share a side
                             checked++;
-                            if (!this.used[i]) { // If new tringle has not been used
+                            if (!this.used[i]) { // If new triangle has not been used
                                 var toBeOrNotToBe = Math.random() - .5;
-                                if (toBeOrNotToBe >= -0.25) { // Wether to combine them or not
+                                if (toBeOrNotToBe >= -0.50) { // Whether to combine them or not
                                     this.used[i] = true;
                                     merge.push(this.triangles[i].geometry);
                                     currT = i;
@@ -284,14 +286,12 @@
                                 }
                             }
                         }
-
-                        if (checked === 3) { // If all 3 sides have been chaked then break
+                        if (checked === 3) { // If all 3 sides have been checked then break
                             break;
                         }
-
                     }
                     var geometry = new BufferGeometryUtils.mergeGeometries(merge, false);
-                    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(Math.random(), Math.random(), Math.random()) });
+                    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.2, 0.2) });
                     this.pieces.push(new puzzlePiece(geometry, material));
 
                 }
@@ -303,22 +303,67 @@
         }
 
         // Moves the puzzle pieces from where they're created to the puzzle board
-        function relocate(pieces, board) {
-
-            // Index to randomly select a point
-            var current = Math.floor(Math.random() * 100) % board.points.length;
-            for (var i = 0; i < pieces.length; i++) {
-                // If the current points is occupied get a new index
-                while (board.occupied[current]) {
-                    current = Math.floor(Math.random() * (board.points.length - 1));
+        function relocate(pieces, mainBoard) {
+            var boundingBox = mainBoard.boundingBox;
+            for (var piece of pieces) {
+                // each piece in our array of pieces starts at 0,0,0, pieceRelocated is false
+                var pieceRelocated = false;
+                // counter for the number of attempts (in case of infinite loop we have a max)
+                var attemptCount = 0;
+                var maxAttempts = 1000;
+                // if we still have attempts left and a piece has not yet been properly located
+                while (!pieceRelocated && attemptCount < maxAttempts) {
+                    var x = (Math.random() * 1300) - 650; // for x pick a random number between -650 and 650
+                    var y = (Math.random() * 400) - 200 // for y pick a random number between  -200 and 200
+                    var newPosition = new THREE.Vector3(x, y, 0); // create a new position for the piece to relocate to 
+                    piece.mesh.position.copy(newPosition);
+                    piece.boundingBox.setFromObject(piece.mesh); //update boundingBox after relocation
+                    /* three conditions: 
+                    * piece must not intersect another piece
+                    * piece must not intersect the bounding box of the main board
+                    * points of the pieces bounding boxes must not lie within the vertices of the main board
+                    */
+                    if (!isIntersecting(piece.boundingBox, pieces, piece) && (!boundingBox.intersectsBox(piece.boundingBox)) && !isPointInPolygon(newPosition, mainBoardVertices)) {
+                        pieceRelocated = true; // if these conditions are met, the piece may be successfully relocated
+                    }
+                    attemptCount++
+                }
+                // in case of infinite loop or otherwise odd generation
+                if (!pieceRelocated) {
+                    console.log(attemptCount)
+                    console.warn(`Could not relocate piece after ${maxAttempts} attempts`);
                 }
 
-                // Moves the piece and sets point to occupied
-                pieces[i].move(board.points[current]);
-                board.occupied[current] = true;
-
             }
-
+        }
+        // function which checkes if the piece is not being relocated
+        function isIntersecting(temp, pieces, pieceToMove) {
+            for (var piece of pieces) { // for each piece in pieces
+                if (piece !== pieceToMove) { // check every bounding box for intersection EXCEPT for the current piece
+                    if (temp.intersectsBox(piece.boundingBox)) { // if there is an intersection return true 
+                        return true;
+                    }
+                }
+            }
+            return false; // if there is no intersection return false, piece may be relocated
+        }
+        /* function to determine when the position of the bounding box of a piece lies within the area of the mainBoard (polygon)
+        * Adapted from StackOverflow
+        */
+        function isPointInPolygon(point, vertices) {
+            var inside = false; // if point is not inside the polygon
+            var x = point.x;
+            var y = point.y;
+            // loop through the vertices of the main board to make sure there are no piece points within the polygon
+            for (var i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+                var v1 = vertices[i]; // current vertex
+                var v2 = vertices[j]; // previous vertex
+                // creating a horizontal line for two vertices and checking if an edge intersects with that line
+                var intersect = ((v1.y > y) !== (v2.y > y))  
+                && (x < ((v2.x - v1.x) * (y - v1.y)) / (v2.y - v1.y) + v1.x); // calculate the slope of the line to be able to get the x coordinate
+                if (intersect) inside = !inside;
+            }
+            return inside;
         }
 
         // Taken from GeeksForGeeks with minor changes
@@ -372,7 +417,7 @@
                     correctCount++;
                     if (correctCount == numOfPieces) {
                         // Play the "winning" sound
-                        playSound('./assets/sounds/correct.mp3');
+                        playSound('./assets/sounds/victory.mp3');
                         console.log("You Win");
                         break;
                     } else {
@@ -396,15 +441,15 @@
 
         // List of vertices to be defined for the main octagon board
         const mainBoardVertices = [
-            new THREE.Vector3(224.51, 224.51, 0), //v1
-            new THREE.Vector3(124.51, -25.49, 0), // v2
-            new THREE.Vector3(324.51, -25.49, 0), // v3
-            new THREE.Vector3(474.51, 124.51, 0), // v4
-            new THREE.Vector3(474.51, 324.51, 0), // v5
-            new THREE.Vector3(324.51, 474.51, 0), //v6
-            new THREE.Vector3(124.51, 474.51, 0), // v7
-            new THREE.Vector3(-25.49, 324.51, 0), // v8
-            new THREE.Vector3(-25.49, 124.51, 0) // v9
+            new THREE.Vector3(250, 250, 0), //v0
+            new THREE.Vector3(150, 0, 0), //v1
+            new THREE.Vector3(350, 0, 0), //v2
+            new THREE.Vector3(500, 150, 0), //v3
+            new THREE.Vector3(500, 350, 0), //v4
+            new THREE.Vector3(350, 500, 0), //v5
+            new THREE.Vector3(150, 500, 0), //v6
+            new THREE.Vector3(0, 350, 0), //v7
+            new THREE.Vector3(0, 150, 0), //v8
         ];
 
         const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
@@ -413,19 +458,19 @@
 
         // List of vertices for the pieces
         var pieceVertices = [
-            new THREE.Vector3(224.51, 224.51, 0), //v0
-            new THREE.Vector3(131.51, 0, 10), // v1
-            new THREE.Vector3(317.5, 0, 10), // v2
-            new THREE.Vector3(449.02, 130.52, 10), // v3
-            new THREE.Vector3(449.02, 318.5, 10), // v4
-            new THREE.Vector3(317.51, 449.02, 10), // v5
-            new THREE.Vector3(131.51, 449.02, 10), // v6
-            new THREE.Vector3(0, 318.5, 10), // v7
-            new THREE.Vector3(0, 130.56, 10), // v8
+            new THREE.Vector3(250, 250, 0), //v0
+            new THREE.Vector3(160, 25, 0), // v1
+            new THREE.Vector3(340, 25, 0), // v2
+            new THREE.Vector3(475, 160, 0), // v3
+            new THREE.Vector3(475, 340, 0), // v4
+            new THREE.Vector3(340, 475, 0), // v5
+            new THREE.Vector3(160, 475, 0), // v6
+            new THREE.Vector3(25, 340, 0), // v7
+            new THREE.Vector3(25, 160, 0) //v8
         ];
 
         // All of the pieces will be the same color
-        const pieceColor = new THREE.Color(0.9, 0.2, 0.2);
+        const pieceColor = new THREE.Color(0.2, 0.3, 0.1);
 
         var puzzle = new MakePuzzle(pieceVertices, pieceColor);
         numOfPieces = puzzle.pieces.length;
@@ -449,13 +494,13 @@
         }
 
         { // var piecesBoard
-            var piecesBoard = new puzzleBoard(
-                new THREE.Vector3(650, -675, -10), new THREE.Color(0, 1, 1), maxWidth, maxHeight,
+            /*var piecesBoard = new puzzleBoard(
+                new THREE.Vector3(650, -675, -10), new THREE.Color(0, 0, 1), maxWidth, maxHeight,
                 numOfPieces
-            );
+            );*/
         }
 
-        relocate(puzzle.pieces, piecesBoard);
+        relocate(puzzle.pieces, mainBoard);
 
         // pass in the array of moveableObjects into the dragControls
         var dControls = new DragControls(moveableObjects, camera, renderer.domElement);
