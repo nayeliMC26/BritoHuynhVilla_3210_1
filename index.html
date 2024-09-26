@@ -18,6 +18,8 @@
         import * as THREE from 'three';
         import { DragControls } from 'three/addons/controls/DragControls.js';
         import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+        import JSConfetti from 'js-confetti'; // Note: must install by typing 'npm -i js-confetti' in terminal
+                    
 
         // create new scene 
         var scene = new THREE.Scene();
@@ -419,6 +421,13 @@
                     if (correctCount == numOfPieces) {
                         // Play the "winning" sound
                         playSound('./assets/sounds/victory.mp3');
+
+                        // Show confetti animation
+                        const jsConfetti = new JSConfetti();
+                        jsConfetti.addConfetti();
+                        jsConfetti.addConfetti({
+                            emojis: ['🍉', '🍓', '🍈'],
+                        });
                         break;
                     } else {
                         // Play the "correct" sound effect
