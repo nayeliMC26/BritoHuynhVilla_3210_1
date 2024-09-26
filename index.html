@@ -427,6 +427,8 @@
                         jsConfetti.addConfetti();
                         jsConfetti.addConfetti({
                             emojis: ['🍉', '🍓', '🍈'],
+                            emojiSize: 100,
+                            confettiNumber: 30,
                         });
                         break;
                     } else {
@@ -501,13 +503,6 @@
                 maxHeight = puzzle.pieces[i].height;
 
             }
-        }
-
-        { // var piecesBoard
-            /*var piecesBoard = new puzzleBoard(
-                new THREE.Vector3(650, -675, -10), new THREE.Color(0, 0, 1), maxWidth, maxHeight,
-                numOfPieces
-            );*/
         }
 
         relocate(puzzle.pieces, mainBoard);

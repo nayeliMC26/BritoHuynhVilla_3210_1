@@ -7,7 +7,7 @@ Group Members: Wander Brito-Martinez, William Huynh, Nayeli Villa
 
 ## Instructions
 
-Run the following commands:\
+Change directory to this project folder, then run the following commands:\
 `npm install --save three`
 
 `npm install --save-dev vite`
