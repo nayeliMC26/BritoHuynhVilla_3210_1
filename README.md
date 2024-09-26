@@ -7,12 +7,12 @@ Group Members: Wander Brito-Martinez, William Huynh, Nayeli Villa
 
 ## Instructions
 
-Run the following commands:
+Run the following commands:\
 `npm install --save three`
 
 `npm install --save-dev vite`
 
-We have also used the library [js-confetti](https://www.npmjs.com/package/js-confetti) to show confetti using emojis after the game is finished. Install it by running the following:
+We have used the library [js-confetti](https://www.npmjs.com/package/js-confetti) to show confetti using emojis after the game is finished. Install it by running the following:\
 `npm install --save js-confetti` or `npm i js-confetti`
 
 Finally, run
