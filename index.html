@@ -4,44 +4,161 @@
 
 <head>
     <title>2D Puzzle</title>
-    <style>
-        body {
-            margin: 0;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <canvas id="myCanvas" width="500" height="500"></canvas>
+    <h1 id="welcomeText">Welcome To The Puzzle</h1>
+    <button id="startButton" onclick="addDifficulties()">Start</button>
+    <h1 id="difficultyText" style="display: none;">Choose A Difficulty</h1>
+    <div id="difficultiesButtons">
 
-    <script type="module">
+        <button id="easyButton" style="display: none;">Easy</button>
+        <button id="mediumButton" style="display: none;">Medium</button>
+        <button id="hardButton" style="display: none;">Hard</button>
+
+    </div>
+    <h1 id="winningText" style="display: none;">YOU WIN!!!</h1>
+
+    <script>
+        function addDifficulties() {
+            document.getElementById('easyButton').style.display = 'inline-block'
+            document.getElementById('mediumButton').style.display = 'inline-block'
+            document.getElementById('hardButton').style.display = 'inline-block'
+            document.getElementById('difficultyText').style.display = 'inline'
+            document.getElementById('welcomeText').style.display = 'none'
+            document.getElementById('startButton').style.display = 'none'
+
+        }
+    </script>
+
+    <script id="puzzle" type="module">
         import * as THREE from 'three';
         import { DragControls } from 'three/addons/controls/DragControls.js';
         import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
-        // create new scene 
-        var scene = new THREE.Scene();
+        var scene, camera, renderer;
+        var listener;
+        var moveableObjects;
+        var mainBoardVertices, mainBoardColors, mainBoard;
+        var pieceVertices, pieceColor, puzzle;
+        var correctCount, numOfPieces;
 
-        // set up the camera 
-        var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 5000);
-        camera.position.x = 250;
-        camera.position.y = 250;
-        camera.position.z = 1500;
-        camera.lookAt(new THREE.Vector3(250, 250, 0));
-        scene.add(camera);
 
-        // create renderer 
-        var renderer = new THREE.WebGLRenderer({ canvas: myCanvas, antialias: true });
+        function startGame(maxSize, randomColors) {
+            // create new scene 
+            scene = new THREE.Scene();
 
-        // set the background color of the canvas
-        renderer.setClearColor(0xecf987);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+            // set up the camera 
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, .1, 5000);
+            camera.position.x = 250;
+            camera.position.y = 250;
+            camera.position.z = 1500;
+            camera.lookAt(new THREE.Vector3(250, 250, 0));
+            scene.add(camera);
 
-        // For sound
-        var listener = new THREE.AudioListener();
-        camera.add(listener);
+            // create renderer 
+            renderer = new THREE.WebGLRenderer({ canvas: myCanvas, antialias: true });
+
+            // set the background color of the canvas
+            renderer.setClearColor(0xecf987);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // For sound
+            listener = new THREE.AudioListener();
+            camera.add(listener);
+
+            correctCount = 0; // Used to determine how many pieces have been placed correctly
+            numOfPieces; // The total number of pieces generated
+
+            // Array of moveable objects (mesh)
+            moveableObjects = [];
+
+            // List of vertices to be defined for the main octagon board
+            mainBoardVertices = [
+                new THREE.Vector3(250, 250, 0), //v0
+                new THREE.Vector3(150, 0, 0), //v1
+                new THREE.Vector3(350, 0, 0), //v2
+                new THREE.Vector3(500, 150, 0), //v3
+                new THREE.Vector3(500, 350, 0), //v4
+                new THREE.Vector3(350, 500, 0), //v5
+                new THREE.Vector3(150, 500, 0), //v6
+                new THREE.Vector3(0, 350, 0), //v7
+                new THREE.Vector3(0, 150, 0), //v8
+            ];
+
+            // The main octagon board's color
+            mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
+
+            // The main play area
+            mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
+
+            // List of vertices for the pieces
+            pieceVertices = [
+                new THREE.Vector3(250, 250, 0), //v0
+                new THREE.Vector3(160, 25, 0), // v1
+                new THREE.Vector3(340, 25, 0), // v2
+                new THREE.Vector3(475, 160, 0), // v3
+                new THREE.Vector3(475, 340, 0), // v4
+                new THREE.Vector3(340, 475, 0), // v5
+                new THREE.Vector3(160, 475, 0), // v6
+                new THREE.Vector3(25, 340, 0), // v7
+                new THREE.Vector3(25, 160, 0) //v8
+            ];
+
+            // All of the pieces will be the same color
+            pieceColor = new THREE.Color(0.2, 0.3, 0.1);
+
+            puzzle = new MakePuzzle(pieceVertices, pieceColor, maxSize, randomColors);
+            numOfPieces = puzzle.pieces.length;
+
+            relocate(puzzle.pieces, mainBoard);
+
+            // pass in the array of moveableObjects into the dragControls
+            var dControls = new DragControls(moveableObjects, camera, renderer.domElement);
+
+            var originalPieceColor;
+
+            // eventListener which detects when an object has been 'clicked' and is being 'dragged'
+            dControls.addEventListener('dragstart', function (event) {
+                // Above and Beyond #1: Play sound upon dragging a piece
+                playSound('./assets/sounds/mouse_click_final.mp3');
+                // Above and Beyond #2: Highlight the piece while moving by changing its color
+
+            });
+
+            // eventListener which detects when an object is no longer being dragged
+            dControls.addEventListener('dragend', function (event) {
+                // snapTo function which occurs when an object is let go of in the range of intersection
+                var targetVector = new THREE.Vector3(0, 0, 0);
+                snapTo(puzzle.pieces, targetVector, 40);
+            });
+
+            // eventListener which detetcs when the mouse is hovering over a piece
+            dControls.addEventListener("hoveron", function (event) {
+                // Store the original pieces' color
+                originalPieceColor = event.object.material.color;
+                event.object.material.color = new THREE.Color("red");
+            });
+
+            // eventListener which detetcs when the mouse is no longer hovering over a piece
+            dControls.addEventListener("hoveroff", function (event) {
+                // Change the color of the piece back to its original color
+                event.object.material.color = originalPieceColor;
+            });
+
+            // Adjusting camera aspect to account for window resize
+            window.addEventListener('resize', function (event) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        }
 
         // Creates a Triangle
         function Triangle(v1, v2, v3, col) {
@@ -74,9 +191,6 @@
             this.color = color;
             this.geometries = [];
 
-
-
-
             // create 8 triangles to form an octagon
             this.triangles = [
                 new Triangle(this.vertices[0], this.vertices[1], this.vertices[2], this.color),
@@ -98,31 +212,20 @@
             scene.add(this.mesh)
 
             this.boundingBox = new THREE.Box3();
-
             this.boundingBox.setFromObject(this.mesh);
-
-            var helper = new THREE.Box3Helper(this.boundingBox, 0x000000)
-            console.log(this.boundingBox);
-            //scene.add(helper);
-
-
-
-
+            this.boundingBox.expandByScalar(10);
 
         }
 
         // Creates a Puzzle Piece
         function puzzlePiece(geometry, material) {
+            // Mesh of the object
             this.mesh = new THREE.Mesh(geometry, material);
             scene.add(this.mesh);
 
             // Bounding box of the piece
             this.boundingBox = new THREE.Box3();
             this.boundingBox.setFromObject(this.mesh);
-
-            var helper = new THREE.Box3Helper(this.boundingBox, 0x000000);
-            //scene.add(helper);
-
 
             // Vertex that will act as the origin of the puzzle piece (bottom most vertex)
             this.origin = new THREE.Vector3(this.boundingBox.min.x, this.boundingBox.min.y, this.boundingBox.min.z)
@@ -131,93 +234,12 @@
             this.width = this.boundingBox.max.x - this.boundingBox.min.x;
             this.height = this.boundingBox.max.y - this.boundingBox.min.y;
 
-            // Function to move puzzle piece
-            this.move = function (newVertex) {
-                // Moves it along the X axis
-                this.mesh.translateX(newVertex.x - this.origin.x);
-
-                // Moves it along the Y axis
-                this.mesh.translateY(newVertex.y - this.origin.y);
-
-                // Updates the origin vertex
-                this.origin = newVertex;
-
-                // Updates bounding box
-                this.boundingBox.setFromObject(this.mesh);
-            }
-
             // Adds puzzle piece into array of objects that can be moved
             moveableObjects.push(this.mesh);
         }
 
-        // Creates a Puzzle Board
-        function puzzleBoard(v1, col, cellWidth, cellHeight, pieceNum) {
-            this.ver = 6;
-            this.hor = Math.ceil(pieceNum / 4);
-
-            // Width of the Puzzle Board
-            this.width = (cellWidth * this.hor) + (cellWidth * (this.hor * .15));
-
-            // Height of the Puzzle Board
-            this.height = (cellHeight * this.ver) + (cellHeight * (this.ver * .15));
-
-            // Adding the vectors to the array
-            this.vertices = [];
-            addVector(this.vertices, v1);
-            this.vertices.push(
-                v1.x + this.width, v1.y, v1.z, v1.x + this.width, v1.y + this.height, v1.z // Bottom right triangle
-            );
-            addVector(this.vertices, v1);
-            this.vertices.push(
-                v1.x + this.width, v1.y + this.height, v1.z, v1.x, v1.y + this.height, v1.z // Top left triangle
-            );
-
-            this.color = col;
-
-            // Width of the cells
-            this.horGap = cellWidth + (cellWidth * .1);
-
-            // Height of the cells
-            this.verGap = cellHeight + (cellHeight * .1);
-
-            // Array of anchor points in the cells
-            this.points = [];
-
-            // Array to check if anchor point has been occupied
-            this.occupied = [];
-
-
-            // Vertex to act as the template for the ancher points
-            this.template = new THREE.Vector2(v1.x + (this.horGap * .1), v1.y + (this.verGap * .1));
-
-            // Loop will iterate vertically (act as the Y)
-            for (var y = 0; y < this.ver; y++) {
-
-                // Loop will iterate horizontally (act as the X)
-                for (var x = 0; x < this.hor; x++) {
-
-                    // Adds an anchor point and adds false
-                    this.points.push(new THREE.Vector3(this.template.x + (x * this.horGap), this.template.y + (y * this.verGap), 0));
-                    this.occupied.push(false);
-                }
-            }
-
-            var geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.vertices), 3));
-            var material = new THREE.MeshBasicMaterial({ color: this.color });
-            this.mesh = new THREE.Mesh(geometry, material);
-            scene.add(this.mesh);
-
-
-            // Add vector to array
-            function addVector(arr, vector) {
-                arr.push(vector.x);
-                arr.push(vector.y);
-                arr.push(vector.z);
-            }
-        }
         /** Creates the puzzle pieces. */
-        function MakePuzzle(vertices, color) {
+        function MakePuzzle(vertices, color, maxSize, randomColors) {
             this.v = vertices;
             this.color = color;
             this.triangles = [];
@@ -225,8 +247,9 @@
             this.pieces = [];
             this.boundingBox = new THREE.Box3();
 
-
+            // add the new vectors for more triangles
             for (var i = 1; i < 9; i++) {
+                // if you reach the last vector
                 if (i === 8) {
                     this.v.push(new THREE.Vector3((this.v[0].x + this.v[i].x) / 2, (this.v[0].y + this.v[i].y) / 2, (this.v[0].z + this.v[i].z) / 2));
                     this.v.push(new THREE.Vector3((this.v[i].x + this.v[1].x) / 2, (this.v[i].y + this.v[1].y) / 2, (this.v[i].z + this.v[1].z) / 2));
@@ -236,18 +259,27 @@
                 };
             };
 
-
+            // a variable used to more easily make trinagles
             var k = 10;
+
+            // Makes the triangles starting at the botton outer triangles and goes counterclockwise
             for (var i = 1; i < this.v.length - 1; i++) {
+                // if you reach the last triangle in the outer triangles
                 if (i === 8) {
                     this.triangles.push(new Triangle(this.v[i], this.v[k], this.v[k - 1], this.color));
                     this.triangles.push(new Triangle(this.v[k], this.v[9], this.v[k - 1], this.color));
                     this.triangles.push(new Triangle(this.v[k], this.v[1], this.v[9], this.color));
+
+                    // if reach the en of the inner triangles
                 } else if (i === 23) {
                     this.triangles.push(new Triangle(this.v[i], this.v[9], this.v[0], this.color));
+
+                    // making inner triangles
                 } else if (i > 8) {
                     this.triangles.push(new Triangle(this.v[i], this.v[i + 2], this.v[0], this.color));
                     i++;
+
+                    // making outer triangles
                 } else {
                     this.triangles.push(new Triangle(this.v[i], this.v[k], this.v[k - 1], this.color));
                     this.triangles.push(new Triangle(this.v[k], this.v[k + 1], this.v[k - 1], this.color));
@@ -256,12 +288,14 @@
                 };
             };
 
+            // tracks which triangles are used
             for (var i = 0; i < this.triangles.length; i++) {
                 this.used.push(false);
             };
 
             shuffleArray(this.triangles)
 
+            // combines the trinagles
             while (this.used.includes(false)) {
                 var currT = Math.floor(Math.random() * 100) % this.triangles.length;
                 var merge = [this.triangles[currT].geometry];
@@ -270,7 +304,7 @@
                 if (!this.used[currT]) { // If current triangle has not been used
                     this.used[currT] = true;
                     for (var i = 0; i < this.triangles.length; i++) {
-                        if (size > 2) { // If they reached the maximun size then exit
+                        if (size === maxSize) { // If they reached the maximun size then exit
                             break;
                         }
                         if (checkSide(this.triangles[currT], this.triangles[i])) { // Check if the triangles share a side
@@ -291,8 +325,13 @@
                             break;
                         }
                     }
+                    // merges the traingles into a new geometry
                     var geometry = new BufferGeometryUtils.mergeGeometries(merge, false);
-                    var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.2, 0.2) });
+                    if (randomColors) {
+                        var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(Math.random(), Math.random(), Math.random(),) });
+                    } else {
+                        var material = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.2, 0.2) });
+                    }
                     this.pieces.push(new puzzlePiece(geometry, material));
 
                 }
@@ -309,11 +348,8 @@
             for (var piece of pieces) {
                 // each piece in our array of pieces starts at 0,0,0, pieceRelocated is false
                 var pieceRelocated = false;
-                // counter for the number of attempts (in case of infinite loop we have a max)
-                var attemptCount = 0;
-                var maxAttempts = 1000;
                 // if we still have attempts left and a piece has not yet been properly located
-                while (!pieceRelocated && attemptCount < maxAttempts) {
+                while (!pieceRelocated) {
                     var x = (Math.random() * 1300) - 650; // for x pick a random number between -650 and 650
                     var y = (Math.random() * 400) - 200 // for y pick a random number between  -200 and 200
                     var newPosition = new THREE.Vector3(x, y, 0); // create a new position for the piece to relocate to 
@@ -327,16 +363,11 @@
                     if (!isIntersecting(piece.boundingBox, pieces, piece) && (!boundingBox.intersectsBox(piece.boundingBox)) && !isPointInPolygon(newPosition, mainBoardVertices)) {
                         pieceRelocated = true; // if these conditions are met, the piece may be successfully relocated
                     }
-                    attemptCount++
-                }
-                // in case of infinite loop or otherwise odd generation
-                if (!pieceRelocated) {
-                    console.log(attemptCount)
-                    console.warn(`Could not relocate piece after ${maxAttempts} attempts`);
                 }
 
             }
         }
+
         // function which checkes if the piece is not being relocated
         function isIntersecting(temp, pieces, pieceToMove) {
             for (var piece of pieces) { // for each piece in pieces
@@ -348,6 +379,7 @@
             }
             return false; // if there is no intersection return false, piece may be relocated
         }
+
         /* function to determine when the position of the bounding box of a piece lies within the area of the mainBoard (polygon)
         * Adapted from StackOverflow
         */
@@ -360,14 +392,14 @@
                 var v1 = vertices[i]; // current vertex
                 var v2 = vertices[j]; // previous vertex
                 // creating a horizontal line for two vertices and checking if an edge intersects with that line
-                var intersect = ((v1.y > y) !== (v2.y > y))  
-                && (x < ((v2.x - v1.x) * (y - v1.y)) / (v2.y - v1.y) + v1.x); // calculate the slope of the line to be able to get the x coordinate
+                var intersect = ((v1.y > y) !== (v2.y > y))
+                    && (x < ((v2.x - v1.x) * (y - v1.y)) / (v2.y - v1.y) + v1.x); // calculate the slope of the line to be able to get the x coordinate
                 if (intersect) inside = !inside;
             }
             return inside;
         }
 
-        // Taken from GeeksForGeeks with minor changes
+        // Randomizes an array (taken from GeeksForGeeks with minor changes)
         function shuffleArray(arr) {
             var currIndex = arr.length - 1;
 
@@ -382,6 +414,7 @@
             };
         }
 
+        // cheks too see if two trinagles share a side
         function checkSide(t1, t2) {
             var v1 = t1.vertices;
             var v2 = t2.vertices;
@@ -419,6 +452,7 @@
                     if (correctCount == numOfPieces) {
                         // Play the "winning" sound
                         playSound('./assets/sounds/victory.mp3');
+                        remove();
                         break;
                     } else {
                         // Play the "correct" sound effect
@@ -429,111 +463,6 @@
 
             }
         }
-
-        // var geometryUtils = new THREE.BufferGeometryUtils().mergeGeometries();
-
-        var correctCount = 0; // Used to determine how many pieces have been placed correctly
-        var numOfPieces; // The total number of pieces generated
-
-        // Array of moveable objects (mesh)
-        var moveableObjects = [];
-
-        // List of vertices to be defined for the main octagon board
-        const mainBoardVertices = [
-            new THREE.Vector3(250, 250, 0), //v0
-            new THREE.Vector3(150, 0, 0), //v1
-            new THREE.Vector3(350, 0, 0), //v2
-            new THREE.Vector3(500, 150, 0), //v3
-            new THREE.Vector3(500, 350, 0), //v4
-            new THREE.Vector3(350, 500, 0), //v5
-            new THREE.Vector3(150, 500, 0), //v6
-            new THREE.Vector3(0, 350, 0), //v7
-            new THREE.Vector3(0, 150, 0), //v8
-        ];
-
-        // The main octagon board's color
-        const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
-
-        // The main play area
-        const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
-
-        // List of vertices for the pieces
-        var pieceVertices = [
-            new THREE.Vector3(250, 250, 0), //v0
-            new THREE.Vector3(160, 25, 0), // v1
-            new THREE.Vector3(340, 25, 0), // v2
-            new THREE.Vector3(475, 160, 0), // v3
-            new THREE.Vector3(475, 340, 0), // v4
-            new THREE.Vector3(340, 475, 0), // v5
-            new THREE.Vector3(160, 475, 0), // v6
-            new THREE.Vector3(25, 340, 0), // v7
-            new THREE.Vector3(25, 160, 0) //v8
-        ];
-
-        // All of the pieces will be the same color
-        const pieceColor = new THREE.Color(0.2, 0.3, 0.1);
-
-        var puzzle = new MakePuzzle(pieceVertices, pieceColor);
-        numOfPieces = puzzle.pieces.length;
-
-        // Max width and height of all the pieces
-        var maxWidth = 0;
-        var maxHeight = 0;
-
-        // Getting the values for the max width and height
-        for (var i = 0; i < puzzle.pieces.length; i++) {
-
-
-            if (puzzle.pieces[i].width > maxWidth) {
-                maxWidth = puzzle.pieces[i].width;
-            }
-
-            if (puzzle.pieces[i].height > maxHeight) {
-                maxHeight = puzzle.pieces[i].height;
-
-            }
-        }
-
-        { // var piecesBoard
-            /*var piecesBoard = new puzzleBoard(
-                new THREE.Vector3(650, -675, -10), new THREE.Color(0, 0, 1), maxWidth, maxHeight,
-                numOfPieces
-            );*/
-        }
-
-        relocate(puzzle.pieces, mainBoard);
-
-        // pass in the array of moveableObjects into the dragControls
-        var dControls = new DragControls(moveableObjects, camera, renderer.domElement);
-
-        var originalPieceColor;
-
-        // eventListener which detects when an object has been 'clicked' and is being 'dragged'
-        dControls.addEventListener('dragstart', function (event) {
-            // Above and Beyond #1: Play sound upon dragging a piece
-            playSound('./assets/sounds/mouse_click_final.mp3');
-            // Above and Beyond #2: Highlight the piece while moving by changing its color
-            // Store the original pieces' color
-            originalPieceColor = event.object.material.color;
-            event.object.material.color = new THREE.Color("red");
-
-        });
-
-        // eventListener which detects when an object is no longer being dragged
-        dControls.addEventListener('dragend', function (event) {
-            // snapTo function which occurs when an object is let go of in the range of intersection
-            var targetVector = new THREE.Vector3(0, 0, 0);
-            snapTo(puzzle.pieces, targetVector, 40);
-            // Change the color of the piece back to its original color
-            event.object.material.color = originalPieceColor;
-        });
-
-        // Adjusting camera aspect to account for window resize
-        window.addEventListener('resize', function (event) {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
 
         /** A function to play a given sound. ("Above and Beyond") */
         function playSound(audioFile) {
@@ -552,8 +481,56 @@
             renderer.render(scene, camera);
         }
 
-        animate();
+        // RTemoves all the objects from the scene
+        function remove() {
+            // stops animation
+            cancelAnimationFrame(animate);
 
+            // removes puzzle pieces
+            for (var i = 0; i < puzzle.pieces.length; i++) {
+                puzzle.pieces[i].mesh.geometry.dispose();
+                puzzle.pieces[i].mesh.material.dispose();
+                scene.remove(puzzle.pieces[i].mesh);
+            }
+
+            // removes mainboard
+            for (var i = 0; i < mainBoard.triangles.length; i++) {
+                mainBoard.triangles[i].mesh.geometry.dispose();
+                mainBoard.triangles[i].mesh.material.dispose();
+                scene.remove(mainBoard.triangles[i].mesh);
+            }
+
+            // removes renderer
+            renderer.dispose();
+            document.body.removeChild(renderer.domElement);
+
+            // add winning text
+            document.getElementById('winningText').style.display = 'inline'
+        }
+
+        // Event listener for easy button
+        document.getElementById('easyButton').addEventListener('click', () => {
+            startGame(5, true);
+            document.getElementById('difficultiesButtons').style.display = 'none';
+            document.getElementById('difficultyText').style.display = 'none'
+
+        });
+
+        // Event listener for medium button
+        document.getElementById('mediumButton').addEventListener('click', () => {
+            startGame(3, true);
+            document.getElementById('difficultiesButtons').style.display = 'none';
+            document.getElementById('difficultyText').style.display = 'none'
+
+        });
+
+        // Event listener for hard button
+        document.getElementById('hardButton').addEventListener('click', () => {
+            startGame(2);
+            document.getElementById('difficultiesButtons').style.display = 'none';
+            document.getElementById('difficultyText').style.display = 'none'
+
+        });
     </script>
 
 </body>
