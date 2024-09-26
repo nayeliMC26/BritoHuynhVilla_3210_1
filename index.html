@@ -32,6 +32,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // For sound
         var listener = new THREE.AudioListener();
         camera.add(listener);
 
@@ -212,7 +213,7 @@
         function MakePuzzle(vertices, color) {
             this.vertices = vertices;
             this.color = color;
-          
+
             this.pieces = [
                 new puzzlePiece(this.vertices[0], this.vertices[1], this.vertices[4], this.color), // t1
                 new puzzlePiece(this.vertices[0], this.vertices[4], this.vertices[5], this.color), // t2
@@ -247,9 +248,8 @@
 
         }
 
-        var correctCount = 0;
-
-        var numOfPieces;
+        var correctCount = 0; // Used to determine how many pieces have been placed correctly
+        var numOfPieces; // The total number of pieces generated
 
         /** A function to handle snapping a piece. */
         function snapTo(triangles, targetVector, threshold) {
@@ -266,15 +266,14 @@
 
                     // Lock the piece in its correct spots into place / disable dragging by creating a new "fake" mesh 
                     moveableObjects[i] = new THREE.Mesh();
-                  
+
                 }
                 // Check if a new piece is actually in its correct location after the snapping function above
                 if ((correctCount == (snapCount - 1)) && hasBeenSnapped) {
                     correctCount++;
                     if (correctCount == numOfPieces) {
                         // Play the "winning" sound
-                        playSound('./assets/sounds/correct.mp3');
-                        console.log("You Win");
+                        playSound('./assets/sounds/victory.mp3');
                         break;
                     } else {
                         // Play the "correct" sound effect
@@ -303,9 +302,10 @@
             new THREE.Vector3(-25.49, 124.51, 0) // v9
         ];
 
+        // The main octagon board's color
         const mainBoardColors = new THREE.Color(0.2, 0.3, 0.1);
 
-
+        // The octagon play area
         const mainBoard = new Octagon(mainBoardVertices, mainBoardColors);
 
         // List of vertices for the pieces
@@ -358,11 +358,15 @@
         // pass in the array of moveableObjects into the dragControls
         var dControls = new DragControls(moveableObjects, camera, renderer.domElement);
 
+        var originalPieceColor;
+
         // eventListener which detects when an object has been 'clicked' and is being 'dragged'
         dControls.addEventListener('dragstart', function (event) {
             // Above and Beyond #1: Play sound upon dragging a piece
             playSound('./assets/sounds/mouse_click_final.mp3');
             // Above and Beyond #2: Highlight the piece while moving by changing its color
+            // Store the original pieces' color
+            originalPieceColor = event.object.material.color;
             event.object.material.color = new THREE.Color("red");
 
         });
@@ -373,7 +377,7 @@
             var targetVector = new THREE.Vector3(0, 0, 0);
             snapTo(puzzle.pieces, targetVector, 40);
             // Change the color of the piece back to its original color
-            event.object.material.color = pieceColor;
+            event.object.material.color = originalPieceColor;
         });
 
         // Adjusting camera aspect to account for window resize
